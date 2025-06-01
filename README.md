@@ -61,6 +61,23 @@ Este proyecto es un servicio web en Node.js que recibe eventos de PlayFab y los 
 }
 ```
 
+## Autenticación por API Key
+
+Este servicio requiere una API Key para acceder a la mayoría de los endpoints.
+
+- **Cabecera requerida:** `x-api-key`
+- **Valor de la API Key:** Defínelo en el archivo `.env` (no compartas la clave públicamente).
+- **Fecha de creación:** 2025-06-01
+- **Versión de la API:** 1.0.0
+
+Incluye la clave en todas tus peticiones protegidas, por ejemplo:
+
+```http
+GET /get-all-players-in-level HTTP/1.1
+Host: tu-servidor:3000
+x-api-key: TU_API_KEY_AQUI
+```
+
 ## Notas
 - El archivo `.env` y la carpeta `node_modules` están excluidos del repositorio por seguridad y tamaño.
 - Puedes modificar la lógica de validación y almacenamiento en `postgreService.js`.

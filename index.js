@@ -4,6 +4,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const bodyParser = require('body-parser');
+const rateLimit = require('express-rate-limit');
 const { insertPlayFabPlayerInLevel, testDbConnection, getAllPlayerInLevel, insertPlayerInLevel, countPlayersByLevel } = require('./postgreService');
 
 const app = express();
@@ -15,8 +16,17 @@ app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// Limitar a 100 peticiones por IP cada 15 minutos
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // máximo 100 peticiones por IP
+  message: { ok: false, error: 'Demasiadas peticiones, intenta más tarde.' }
+});
+
+app.use(limiter);
+
 app.get('/', (req, res) => {
-  res.send('¡Hola, mundo! El servicio web está funcionando.');
+  res.send("3DDSocialServices, you shouldn't be here.");
 });
 
 // Endpoint para probar la conexión a PostgreSQL
@@ -78,6 +88,18 @@ app.get('/count-by-level', async (req, res) => {
     res.status(500).json({ ok: false, error: err.message });
   }
 });
+
+// Middleware para validar API Key
+function apiKeyAuth(req, res, next) {
+  const apiKey = req.headers['x-api-key'];
+  if (!apiKey || apiKey !== process.env.API_KEY) {
+    return res.status(401).json({ ok: false, error: 'Unauthorized: Invalid or missing API Key' });
+  }
+  next();
+}
+
+// Proteger todos los endpoints excepto el de prueba y la raíz
+app.use(['/playfab/PlayerInLevel', '/playfab/get-all-players-in-level', '/insert-player-in-level', '/get-all-players-in-level', '/count-by-level'], apiKeyAuth);
 
 app.listen(port, () => {
   console.log(`Servidor escuchando en http://localhost:${port}`);
