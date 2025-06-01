@@ -4,7 +4,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const bodyParser = require('body-parser');
-const { insertPlayerInLevel, testDbConnection } = require('./postgreService');
+const { insertPlayFabPlayerInLevel, testDbConnection, getAllPlayerInLevel, insertPlayerInLevel, countPlayersByLevel } = require('./postgreService');
 
 const app = express();
 const port = 3000;
@@ -29,11 +29,51 @@ app.get('/test-db', async (req, res) => {
   }
 });
 
-// Endpoint para insertar un evento PlayerInLevel en la tabla player_in_level
-app.post('/webhook/PlayerInLevel', async (req, res) => {
+// Endpoint para insertar un evento PlayerInLevel en la tabla playfab
+app.post('/playfab/PlayerInLevel', async (req, res) => {
+  try {
+    const data = await insertPlayFabPlayerInLevel(req.body);
+    res.status(201).json({ ok: true, data });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// Endpoint para obtener todos los registros completos de la tabla player_in_level (playfab)
+app.get('/playfab/get-all-players-in-level', async (req, res) => {    
+  try {
+    const data = await getAllPlayerInLevel();
+    res.json({ ok: true, data });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// Nuevo endpoint para insertar en la tabla player_in_level (estructura simple)
+app.post('/insert-player-in-level', async (req, res) => {
   try {
     const data = await insertPlayerInLevel(req.body);
     res.status(201).json({ ok: true, data });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// Endpoint para obtener todos los registros de la tabla player_in_level
+app.get('/get-all-players-in-level', async (req, res) => {
+  try {
+    const data = await getAllPlayerInLevel();
+    res.json({ ok: true, data });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// Endpoint para obtener el recuento de registros agrupados por level_name en player_in_level
+app.get('/count-by-level', async (req, res) => {
+  try {
+    const data = await countPlayersByLevel();
+    res.json({ ok: true, data });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }

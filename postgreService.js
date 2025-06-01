@@ -13,7 +13,7 @@ pool.query('SELECT NOW()', (err, result) => {
 });
 
 // Función para insertar un evento PlayerInLevel
-async function insertPlayerInLevel(event) {
+async function insertPlayFabPlayerInLevel(event) {
   if (!event || typeof event !== 'object') {
     throw new Error('El cuerpo de la petición no es un JSON válido o está vacío.');
   }
@@ -53,7 +53,7 @@ async function insertPlayerInLevel(event) {
   } = event;
   const { Vertical, Cloud, Application, Commit } = PlayFabEnvironment;
   const result = await pool.query(
-    `INSERT INTO player_in_level (
+    `INSERT INTO playfab_player_in_level (
       event_name, source, entity_id, title_id, event_namespace, event_id, entity_type, source_type, timestamp,
       playfab_vertical, playfab_cloud, playfab_application, playfab_commit, level_name
     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
@@ -77,10 +77,51 @@ async function insertPlayerInLevel(event) {
   return result.rows[0];
 }
 
+// Función para insertar en la tabla player_in_level
+async function insertPlayerInLevel(event) {
+  if (!event || typeof event !== 'object') {
+    throw new Error('El cuerpo de la petición no es un JSON válido o está vacío.');
+  }
+  const requiredFields = ['EntityId', 'LevelName'];
+  for (const field of requiredFields) {
+    if (!event[field]) {
+      throw new Error(`El campo obligatorio '${field}' no está presente o es nulo.`);
+    }
+  }
+  const result = await pool.query(
+    `INSERT INTO player_in_level (entity_id, level_name) VALUES ($1, $2) RETURNING *`,
+    [event.EntityId, event.LevelName]
+  );
+  return result.rows[0];
+}
+
 // Función para probar la conexión (para el endpoint /test-db)
 async function testDbConnection() {
   const result = await pool.query('SELECT NOW()');
   return result.rows[0].now;
 }
 
-module.exports = { insertPlayerInLevel, testDbConnection };
+// Función para obtener todos los registros de la tabla player_in_level
+async function getAllPlayerInLevel() {
+  const result = await pool.query('SELECT * FROM player_in_level ORDER BY id DESC');
+  return result.rows;
+}
+
+// Función para obtener el recuento de registros agrupados por level_name en player_in_level
+async function countPlayersByLevel() {
+  const result = await pool.query(`
+    SELECT level_name, COUNT(*) AS count
+    FROM player_in_level
+    GROUP BY level_name
+    ORDER BY count DESC
+  `);
+  return result.rows;
+}
+
+module.exports = {
+  insertPlayFabPlayerInLevel,
+  testDbConnection,
+  getAllPlayerInLevel,
+  insertPlayerInLevel,
+  countPlayersByLevel
+};
