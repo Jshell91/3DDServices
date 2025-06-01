@@ -25,6 +25,18 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
+// Middleware para validar API Key
+function apiKeyAuth(req, res, next) {
+  const apiKey = req.get('x-api-key') || req.headers['x-api-key'];
+  if (!apiKey || apiKey !== process.env.API_KEY) {
+    res.status(401);
+    return res.json({ ok: false, error: 'Unauthorized: Invalid or missing API Key' });
+  }
+  next();
+}
+
+app.use(apiKeyAuth);
+
 app.get('/', (req, res) => {
   res.send("3DDSocialServices, you shouldn't be here.");
 });
@@ -89,18 +101,7 @@ app.get('/count-by-level', async (req, res) => {
   }
 });
 
-// Middleware para validar API Key
-function apiKeyAuth(req, res, next) {
-  const apiKey = req.headers['x-api-key'];
-  if (!apiKey || apiKey !== process.env.API_KEY) {
-    return res.status(401).json({ ok: false, error: 'Unauthorized: Invalid or missing API Key' });
-  }
-  next();
-}
-
-// Proteger todos los endpoints excepto el de prueba y la raíz
-app.use(['/playfab/PlayerInLevel', '/playfab/get-all-players-in-level', '/insert-player-in-level', '/get-all-players-in-level', '/count-by-level'], apiKeyAuth);
-
 app.listen(port, () => {
   console.log(`Servidor escuchando en http://localhost:${port}`);
+  console.log('API_KEY from env:', JSON.stringify(process.env.API_KEY));
 });
