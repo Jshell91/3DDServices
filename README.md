@@ -1,26 +1,26 @@
 # 3DDServices
 
-Este proyecto es un servicio web en Node.js que recibe eventos de PlayFab y los almacena en una base de datos PostgreSQL.
+This project is a Node.js web service that receives PlayFab events and stores them in a PostgreSQL database.
 
-## Características principales
-- API REST con Express
-- Seguridad con Helmet y CORS
-- Registro de logs con Morgan
-- Variables de entorno con dotenv
-- Inserción y validación de eventos PlayerInLevel desde PlayFab
-- Conexión a PostgreSQL
+## Main Features
+- REST API with Express
+- Security with Helmet and CORS
+- Logging with Morgan
+- Environment variables with dotenv
+- Insertion and validation of PlayerInLevel events from PlayFab
+- PostgreSQL connection
 
-## Instalación
-1. Clona el repositorio:
+## Installation
+1. Clone the repository:
    ```bash
-   git clone https://github.com/TU_USUARIO/3DDServices.git
+   git clone https://github.com/YOUR_USER/3DDServices.git
    cd 3DDServices
    ```
-2. Instala las dependencias:
+2. Install dependencies:
    ```bash
    npm install
    ```
-3. Crea un archivo `.env` con la configuración de tu base de datos PostgreSQL:
+3. Create a `.env` file with your PostgreSQL database configuration:
    ```env
    PGHOST=...
    PGUSER=...
@@ -29,17 +29,33 @@ Este proyecto es un servicio web en Node.js que recibe eventos de PlayFab y los 
    PGPORT=5432
    ```
 
-## Uso
-- Inicia el servidor:
+## Usage
+- Start the server:
   ```bash
   node index.js
   ```
-- Endpoint de prueba de conexión:
-  - `GET /test-db`  → Devuelve la fecha/hora actual de la base de datos.
-- Endpoint para recibir eventos de PlayFab:
-  - `POST /webhook/PlayerInLevel`  → Inserta un evento en la base de datos. El body debe ser un JSON con la estructura esperada.
+- Connection test endpoint:
+  - `GET /test-db`  → Returns the current date/time from the database.
+- Endpoint to receive PlayFab events:
+  - `POST /webhook/PlayerInLevel`  → Inserts an event into the database. The body must be a JSON with the expected structure.
+- Endpoint to register a like for an artwork:
+  - `POST /artwork/like`  → Inserts a like into the database. The body must be a JSON with the fields `artwork_id` and `user_id`.
 
-## Estructura esperada del JSON
+### Usage Example
+
+```http
+POST /artwork/like HTTP/1.1
+Host: your-server:3000
+Content-Type: application/json
+x-api-key: YOUR_API_KEY_HERE
+
+{
+  "artwork_id": "artwork123",
+  "user_id": "user456"
+}
+```
+
+## Expected JSON Structure
 ```json
 {
   "EventName": "PlayerInLevel",
@@ -61,26 +77,101 @@ Este proyecto es un servicio web en Node.js que recibe eventos de PlayFab y los 
 }
 ```
 
-## Autenticación por API Key
+## API Key Authentication
 
-Este servicio requiere una API Key para acceder a la mayoría de los endpoints.
+This service requires an API Key to access most endpoints.
 
-- **Cabecera requerida:** `x-api-key`
-- **Valor de la API Key:** Defínelo en el archivo `.env` (no compartas la clave públicamente).
-- **Fecha de creación:** 2025-06-01
-- **Versión de la API:** 1.0.0
+- **Required header:** `x-api-key`
+- **API Key value:** Define it in the `.env` file (do not share the key publicly).
+- **Creation date:** 2025-06-01
+- **API version:** 1.0.0
 
-Incluye la clave en todas tus peticiones protegidas, por ejemplo:
+Include the key in all your protected requests, for example:
 
 ```http
 GET /get-all-players-in-level HTTP/1.1
-Host: tu-servidor:3000
-x-api-key: TU_API_KEY_AQUI
+Host: your-server:3000
+x-api-key: YOUR_API_KEY_HERE
 ```
 
-## Notas
-- El archivo `.env` y la carpeta `node_modules` están excluidos del repositorio por seguridad y tamaño.
-- Puedes modificar la lógica de validación y almacenamiento en `postgreService.js`.
+## Available Endpoints
 
-## Licencia
+> All endpoints (except `/`) require API Key authentication via the `x-api-key` header.
+
+### 1. Connection test
+- **GET /test-db**
+  - Returns the current date/time from the database.
+  - Example response:
+    ```json
+    { "ok": true, "now": "2025-06-07T12:34:56.789Z" }
+    ```
+
+### 2. Insert PlayFab PlayerInLevel event
+- **POST /playfab/PlayerInLevel**
+  - Inserts an event into the `playfab_player_in_level` table.
+  - Body: JSON with the expected structure (see example below).
+  - Example response:
+    ```json
+    { "ok": true, "data": { ...record... } }
+    ```
+
+### 3. Get all player_in_level records (PlayFab)
+- **GET /playfab/get-all-players-in-level**
+  - Returns all records from the `player_in_level` table.
+
+### 4. Insert simple record into player_in_level
+- **POST /insert-player-in-level**
+  - Inserts a simple record into the `player_in_level` table.
+  - Body: `{ "EntityId": "...", "LevelName": "..." }`
+
+### 5. Get all player_in_level records
+- **GET /get-all-players-in-level**
+  - Returns all records from the `player_in_level` table.
+
+### 6. Count players by level
+- **GET /count-by-level**
+  - Returns the count of records grouped by `level_name` in `player_in_level`.
+
+### 7. Register a like for an artwork
+- **POST /artwork/like**
+  - Inserts a like into the `artwork_likes` table.
+  - Body: `{ "artwork_id": "...", "user_id": "..." }`
+  - If the user has already liked that artwork, returns a clear error.
+
+### 8. Count likes by artwork
+- **GET /artwork/count-likes**
+  - Returns the count of likes grouped by `artwork_id` in the `artwork_likes` table.
+  - Example response:
+    ```json
+    [
+      { "artwork_id": "artwork123", "likes": "5" },
+      { "artwork_id": "artwork456", "likes": "2" }
+    ]
+    ```
+
+### 9. Get likes for a specific artwork
+- **GET /artwork/likes/:artwork_id**
+  - Returns the number of likes for a specific artwork.
+  - Example response:
+    ```json
+    { "ok": true, "artwork_id": "artwork123", "likes": "5" }
+    ```
+
+### 10. Root endpoint (no authentication required)
+- **GET /**
+  - Returns a simple welcome or warning message.
+
+### 11. Check if a user has liked an artwork
+- **GET /artwork/has-liked/:artwork_id/:user_id**
+  - Returns whether a user has liked a specific artwork.
+  - Example response:
+    ```json
+    { "ok": true, "artwork_id": "artwork123", "user_id": "user456", "liked": true }
+    ```
+
+## Notes
+- The `.env` file and `node_modules` folder are excluded from the repository for security and size reasons.
+- You can modify the validation and storage logic in `postgreService.js`.
+
+## License
 MIT

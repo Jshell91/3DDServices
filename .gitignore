@@ -23,3 +23,13 @@ pids/
 # OS
 Thumbs.db
 API_VERSION.md
+
+# Archivos de prueba
+/test_artwork_likes.http
+/test_artwork_likes.ps1
+
+# Archivo de comandos útiles
+/PM2_COMMANDS.md
+
+# Archivo de guía de despliegue
+/DEPLOY.md
