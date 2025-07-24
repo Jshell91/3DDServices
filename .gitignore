@@ -24,6 +24,11 @@ pids/
 Thumbs.db
 API_VERSION.md
 
+
+# Ignorar carpetas de tests y SQL
+/test/
+/sql/
+
 # Archivos de prueba
 /test_artwork_likes.http
 /test_artwork_likes.ps1

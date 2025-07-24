@@ -169,6 +169,101 @@ x-api-key: YOUR_API_KEY_HERE
     { "ok": true, "artwork_id": "artwork123", "user_id": "user456", "liked": true }
     ```
 
+
+## 12. Maps API
+
+The `maps` table now includes a `max_players` column (integer, NOT NULL, default 50).
+
+### Table Structure (relevant fields)
+| Field              | Type      | Description                        |
+|--------------------|-----------|------------------------------------|
+| id                 | integer   | Primary key                        |
+| name               | text      | Map name                           |
+| map                | text      | Map identifier                     |
+| codemap            | text      | Optional code                      |
+| is_single_player   | boolean   | Single player map?                 |
+| name_in_game       | text      | Name as shown in game              |
+| is_online          | boolean   | Online map?                        |
+| visible_map_select | boolean   | Visible in map select?             |
+| views              | text      | View count                         |
+| sponsor            | text      | Sponsor name                       |
+| image              | text      | Image filename                     |
+| max_players        | integer   | **Max players supported**          |
+
+### Endpoints
+
+- **GET /maps** — List all maps
+- **GET /maps/:id** — Get map by id
+- **POST /maps** — Create new map
+- **PUT /maps/:id** — Update map by id
+- **DELETE /maps/:id** — Delete map by id
+
+All endpoints require the `x-api-key` header.
+
+#### Example: Create a new map
+```http
+POST /maps HTTP/1.1
+Host: your-server:3000
+Content-Type: application/json
+x-api-key: YOUR_API_KEY_HERE
+
+{
+  "name": "Test Map",
+  "map": "test_map",
+  "codemap": "",
+  "is_single_player": true,
+  "name_in_game": "Test Map",
+  "is_online": false,
+  "visible_map_select": true,
+  "views": "0",
+  "sponsor": "TestSponsor",
+  "image": "test.png",
+  "max_players": 8
+}
+```
+
+#### Example: Response
+```json
+{
+  "ok": true,
+  "data": {
+    "id": 1,
+    "name": "Test Map",
+    "map": "test_map",
+    "codemap": "",
+    "is_single_player": true,
+    "name_in_game": "Test Map",
+    "is_online": false,
+    "visible_map_select": true,
+    "views": "0",
+    "sponsor": "TestSponsor",
+    "image": "test.png",
+    "max_players": 8
+  }
+}
+```
+
+#### Example: Update max_players
+```http
+PUT /maps/1 HTTP/1.1
+Host: your-server:3000
+Content-Type: application/json
+x-api-key: YOUR_API_KEY_HERE
+
+{
+  "max_players": 16
+}
+```
+
+#### Example: Get all maps
+```http
+GET /maps HTTP/1.1
+Host: your-server:3000
+x-api-key: YOUR_API_KEY_HERE
+```
+
+---
+
 ## Notes
 - The `.env` file and `node_modules` folder are excluded from the repository for security and size reasons.
 - You can modify the validation and storage logic in `postgreService.js`.

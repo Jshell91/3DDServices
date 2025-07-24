@@ -182,4 +182,84 @@ module.exports = {
   countLikesByArtwork,
   getLikesByArtworkId,
   hasUserLikedArtwork
+  ,
+  getAllMaps,
+  getMapById,
+  insertMap,
+  updateMap,
+  deleteMap
 };
+
+// --- MAPS TABLE FUNCTIONS ---
+
+// Get all maps
+async function getAllMaps() {
+  const result = await pool.query('SELECT * FROM maps ORDER BY id ASC');
+  return result.rows;
+}
+
+// Get map by id
+async function getMapById(id) {
+  if (!id) throw new Error('id is required');
+  const result = await pool.query('SELECT * FROM maps WHERE id = $1', [id]);
+  return result.rows[0];
+}
+
+// Insert a new map
+async function insertMap(map) {
+  const requiredFields = ['name', 'map', 'is_single_player', 'name_in_game', 'is_online', 'visible_map_select', 'views', 'sponsor', 'image', 'max_players'];
+  for (const field of requiredFields) {
+    if (map[field] === undefined) {
+      throw new Error(`The required field '${field}' is missing or null.`);
+    }
+  }
+  const result = await pool.query(
+    `INSERT INTO maps (name, map, codemap, is_single_player, name_in_game, is_online, visible_map_select, views, sponsor, image, max_players)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+    [
+      map.name,
+      map.map,
+      map.codemap || '',
+      map.is_single_player,
+      map.name_in_game,
+      map.is_online,
+      map.visible_map_select,
+      map.views,
+      map.sponsor,
+      map.image,
+      map.max_players
+    ]
+  );
+  return result.rows[0];
+}
+
+// Update a map by id
+async function updateMap(id, map) {
+  if (!id) throw new Error('id is required');
+  // Only allow updating certain fields
+  const fields = ['name', 'map', 'codemap', 'is_single_player', 'name_in_game', 'is_online', 'visible_map_select', 'views', 'sponsor', 'image', 'max_players'];
+  const set = [];
+  const values = [];
+  let idx = 1;
+  for (const field of fields) {
+    if (map[field] !== undefined) {
+      set.push(`${field} = $${idx}`);
+      values.push(map[field]);
+      idx++;
+    }
+  }
+  if (set.length === 0) throw new Error('No valid fields to update');
+  values.push(id);
+  const result = await pool.query(
+    `UPDATE maps SET ${set.join(', ')} WHERE id = $${idx} RETURNING *`,
+    values
+  );
+  return result.rows[0];
+}
+
+// Delete a map by id
+async function deleteMap(id) {
+  if (!id) throw new Error('id is required');
+  const result = await pool.query('DELETE FROM maps WHERE id = $1 RETURNING *', [id]);
+  return result.rows[0];
+}

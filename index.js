@@ -1,3 +1,4 @@
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -5,7 +6,11 @@ const morgan = require('morgan');
 const helmet = require('helmet');
 const bodyParser = require('body-parser');
 const rateLimit = require('express-rate-limit');
-const { insertPlayFabPlayerInLevel, testDbConnection, getAllPlayerInLevel, insertPlayerInLevel, countPlayersByLevel, insertArtworkLike, countLikesByArtwork, getLikesByArtworkId, hasUserLikedArtwork } = require('./postgreService');
+const {
+  insertPlayFabPlayerInLevel, testDbConnection, getAllPlayerInLevel, insertPlayerInLevel, countPlayersByLevel,
+  insertArtworkLike, countLikesByArtwork, getLikesByArtworkId, hasUserLikedArtwork,
+  getAllMaps, getMapById, insertMap, updateMap, deleteMap
+} = require('./postgreService');
 
 const app = express();
 const port = 3000;
@@ -138,6 +143,60 @@ app.get('/artwork/has-liked/:artwork_id/:user_id', async (req, res) => {
     res.json({ ok: true, artwork_id: req.params.artwork_id, user_id: req.params.user_id, liked });
   } catch (err) {
     res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+// --- MAPS ENDPOINTS ---
+// List all maps
+app.get('/maps', async (req, res) => {
+  try {
+    const data = await getAllMaps();
+    res.json({ ok: true, data });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// Get map by id
+app.get('/maps/:id', async (req, res) => {
+  try {
+    const map = await getMapById(req.params.id);
+    if (!map) return res.status(404).json({ ok: false, error: 'Map not found' });
+    res.json({ ok: true, data: map });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// Create new map
+app.post('/maps', async (req, res) => {
+  try {
+    const newMap = await insertMap(req.body);
+    res.status(201).json({ ok: true, data: newMap });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+// Update map
+app.put('/maps/:id', async (req, res) => {
+  try {
+    const updated = await updateMap(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ ok: false, error: 'Map not found' });
+    res.json({ ok: true, data: updated });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+// Delete map
+app.delete('/maps/:id', async (req, res) => {
+  try {
+    const deleted = await deleteMap(req.params.id);
+    if (!deleted) return res.status(404).json({ ok: false, error: 'Map not found' });
+    res.json({ ok: true, data: deleted });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
   }
 });
 
