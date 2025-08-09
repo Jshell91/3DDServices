@@ -38,3 +38,5 @@ API_VERSION.md
 
 # Archivo de guía de despliegue
 /DEPLOY.md
+server-standalone.js
+package-standalone.json

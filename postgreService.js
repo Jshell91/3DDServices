@@ -181,20 +181,118 @@ module.exports = {
   insertArtworkLike,
   countLikesByArtwork,
   getLikesByArtworkId,
-  hasUserLikedArtwork
-  ,
+  hasUserLikedArtwork,
   getAllMaps,
   getMapById,
   insertMap,
   updateMap,
-  deleteMap
+  deleteMap,
+  getAllOnlineMaps,
+  getOnlineMapById,
+  insertOnlineMap,
+  updateOnlineMap,
+  deleteOnlineMap,
+  closeOnlineMapByAddressPort,
+  getOpenOnlineMapsByName
 };
+// Cierra un online_map por address y port (status='closed', closed_stamp=now())
+async function closeOnlineMapByAddressPort(address, port) {
+  if (!address || !port) throw new Error('address and port are required');
+  
+  // Update the online_map to set status='closed' and closed_stamp=now()
+  const result = await pool.query(
+    `UPDATE online_maps
+     SET status = 'closed', closed_stamp = NOW()
+     WHERE address = $1 AND port = $2 AND status = 'open'
+     RETURNING *`,
+    [address, port]
+  );
+  if (result.rows.length === 0) {
+    throw new Error('No open online_map found with the given address and port.');
+  }
+  return result.rows[0];
+}
 
 // --- MAPS TABLE FUNCTIONS ---
 
+// --- ONLINE_MAPS TABLE FUNCTIONS ---
+
+// Get all online maps
+async function getAllOnlineMaps() {
+  const result = await pool.query('SELECT * FROM online_maps ORDER BY id ASC');
+  return result.rows;
+}
+
+// Get online map by id
+async function getOnlineMapById(id) {
+  if (!id) throw new Error('id is required');
+  const result = await pool.query('SELECT * FROM online_maps WHERE id = $1', [id]);
+  return result.rows[0];
+}
+
+// Get open online maps by name
+async function getOpenOnlineMapsByName(mapName) {
+  if (!mapName) throw new Error('mapName is required');
+  const result = await pool.query(
+    'SELECT * FROM online_maps WHERE map_name ILIKE $1 AND status = $2 ORDER BY opened_stamp DESC',
+    [`%${mapName}%`, 'open']
+  );
+  return result.rows;
+}
+
+// Insert a new online map
+async function insertOnlineMap(req) {
+  const requiredFields = ['map_name', 'port']; // address no es requerido, se usa req.ip
+  const map = req.body.map || req.body; // Support both body.map and body directly
+  for (const field of requiredFields) {
+    if (map[field] === undefined || map[field] === null) {
+      throw new Error(`The required field '${field}' is missing or null.`);
+    }
+  }
+  try {
+    console.log(req.connection.remoteAddress);
+    const result = await pool.query(
+      `INSERT INTO online_maps (map_name, address, port)
+       VALUES ($1, $2, $3) RETURNING *`,
+      [
+        map.map_name,
+        req.connection.remoteAddress, // Siempre usa la IP del request
+        map.port,
+      ]
+    );    
+    return result.rows[0];
+  } catch (err) {
+    if (err.code === '23505') {
+      throw new Error('There is already an open map with this address and port.');
+    }
+    throw err;
+  }
+}
+
+// Update an online map
+async function updateOnlineMap(id, fields) {
+  if (!id) throw new Error('id is required');
+  const keys = Object.keys(fields);
+  if (keys.length === 0) throw new Error('No fields to update.');
+  const setClause = keys.map((k, i) => `${k} = $${i + 2}`).join(', ');
+  const values = [id, ...keys.map(k => fields[k])];
+  const result = await pool.query(
+    `UPDATE online_maps SET ${setClause} WHERE id = $1 RETURNING *`,
+    values
+  );
+  return result.rows[0];
+}
+
+// Delete an online map
+async function deleteOnlineMap(id) {
+  if (!id) throw new Error('id is required');
+  const result = await pool.query('DELETE FROM online_maps WHERE id = $1 RETURNING *', [id]);
+  return result.rows[0];
+}
+
 // Get all maps
 async function getAllMaps() {
-  const result = await pool.query('SELECT * FROM maps ORDER BY id ASC');
+  const result = await pool.query('SELECT * FROM maps WHERE visible_map_select = true ORDER BY id ASC');
   return result.rows;
 }
 

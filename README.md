@@ -1,3 +1,109 @@
+## 13. Online Maps API
+
+La tabla `online_maps` permite registrar mapas abiertos en tiempo real y sus características.
+
+### Estructura principal de la tabla
+| Campo           | Tipo      | Descripción                                 |
+|-----------------|-----------|---------------------------------------------|
+| id              | integer   | Clave primaria                              |
+| map_name        | text      | Nombre del mapa                             |
+| address         | text      | Dirección IP o DNS del servidor             |
+| port            | integer   | Puerto del servidor                         |
+| current_players | integer   | Jugadores conectados actualmente            |
+| max_players     | integer   | Máximo de jugadores soportados              |
+| opened_stamp    | timestamp | Fecha/hora de apertura (por defecto NOW())  |
+| status          | text      | Estado ('open' o 'closed')                  |
+| closed_stamp    | timestamp | Fecha/hora de cierre (puede ser NULL)       |
+
+### Endpoints
+
+- **GET /online-maps** — Lista todos los mapas online
+- **GET /online-maps/:id** — Obtiene un mapa online por id
+- **GET /online-maps/search/:name** — Busca mapas online abiertos por nombre (búsqueda parcial, case-insensitive)
+- **POST /online-maps** — Crea un nuevo registro de mapa online
+- **PUT /online-maps/:id** — Actualiza un registro de mapa online por id
+- **DELETE /online-maps/:id** — Elimina un registro de mapa online por id
+- **PUT /online-maps/close** — Cierra un mapa online por puerto (IP automática del request)
+
+Todos los endpoints requieren el header `x-api-key`.
+
+#### Ejemplo: Crear un nuevo mapa online
+```http
+POST /online-maps HTTP/1.1
+Host: your-server:3000
+Content-Type: application/json
+x-api-key: YOUR_API_KEY_HERE
+
+{
+  "map_name": "Test Online Map",
+  "port": 7777,
+  "current_players": 0,
+  "max_players": 16
+}
+```
+*Nota: El campo `address` ya no es necesario, se usa automáticamente la IP del request.*
+
+#### Ejemplo: Buscar mapas online por nombre
+```http
+GET /online-maps/survival HTTP/1.1
+Host: your-server:3000
+x-api-key: YOUR_API_KEY_HERE
+```
+
+#### Ejemplo: Cerrar un mapa online
+```http
+PUT /online-maps/close HTTP/1.1
+Host: your-server:3000
+Content-Type: application/json
+x-api-key: YOUR_API_KEY_HERE
+
+{
+  "port": 7777
+}
+```
+*Nota: Solo necesitas enviar el puerto, la dirección se obtiene automáticamente del request.*
+
+#### Ejemplo: Respuesta de búsqueda
+```json
+{
+  "ok": true,
+  "data": [
+    {
+      "id": 1,
+      "map_name": "Survival Arena",
+      "address": "127.0.0.1",
+      "port": 7777,
+      "current_players": 5,
+      "max_players": 16,
+      "opened_stamp": "2025-08-09T12:34:56.789Z",
+      "status": "open",
+      "closed_stamp": null
+    }
+  ],
+  "count": 1,
+  "search_term": "survival"
+}
+```
+
+#### Ejemplo: Respuesta al crear
+```json
+{
+  "ok": true,
+  "data": {
+    "id": 1,
+    "map_name": "Test Online Map",
+    "address": "192.168.1.100",
+    "port": 7777,
+    "current_players": 0,
+    "max_players": 16,
+    "opened_stamp": "2025-07-28T12:34:56.789Z",
+    "status": "open",
+    "closed_stamp": null
+  }
+}
+```
+
+---
 # 3DDServices
 
 This project is a Node.js web service that receives PlayFab events and stores them in a PostgreSQL database.
@@ -192,7 +298,7 @@ The `maps` table now includes a `max_players` column (integer, NOT NULL, default
 
 ### Endpoints
 
-- **GET /maps** — List all maps
+ - **GET /maps** — List all maps where `visible_map_select` is true
 - **GET /maps/:id** — Get map by id
 - **POST /maps** — Create new map
 - **PUT /maps/:id** — Update map by id
@@ -261,6 +367,49 @@ GET /maps HTTP/1.1
 Host: your-server:3000
 x-api-key: YOUR_API_KEY_HERE
 ```
+
+---
+
+## 14. Odin4Players Voice/Text Chat API
+
+La integración con Odin4Players permite generar tokens para salas de chat de voz y texto en tiempo real.
+
+### ¿Qué es Odin4Players?
+Odin4Players es una plataforma de comunicación de voz y texto en tiempo real diseñada específicamente para videojuegos. Permite crear salas de chat persistentes donde los jugadores pueden comunicarse.
+
+### Configuración
+- **Variable de entorno requerida**: `ODIN_ACCESS_KEY` en el archivo `.env`
+- **Dependencia**: `@4players/odin-tokens`
+
+### Endpoints
+
+- **POST /odin/token** — Genera un token para una sala de chat (compatible con server-standalone original)
+
+Todos los endpoints requieren el header `x-api-key`.
+
+#### Ejemplo: Generar token para sala de chat
+```http
+POST /odin/token HTTP/1.1
+Host: your-server:3000
+Content-Type: application/json
+x-api-key: YOUR_API_KEY_HERE
+
+{
+  "room_name": "general_chat",
+  "user_id": "player_001"
+}
+```
+*Nota: Este endpoint es compatible con el formato del server-standalone original.*
+
+#### Respuesta exitosa
+```json
+{
+  "token": "eyJhbGciOiJFZERTQSIsImtpZCI6..."
+}
+```
+
+### Uso con mapas online
+Los tokens generados se pueden usar para crear salas de chat específicas. Para mapas online, puedes usar nombres de sala como `map_12345` para identificar cada mapa individual.
 
 ---
 

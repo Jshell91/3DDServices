@@ -9,8 +9,12 @@ const rateLimit = require('express-rate-limit');
 const {
   insertPlayFabPlayerInLevel, testDbConnection, getAllPlayerInLevel, insertPlayerInLevel, countPlayersByLevel,
   insertArtworkLike, countLikesByArtwork, getLikesByArtworkId, hasUserLikedArtwork,
-  getAllMaps, getMapById, insertMap, updateMap, deleteMap
+  getAllMaps, getMapById, insertMap, updateMap, deleteMap,
+  getAllOnlineMaps, getOnlineMapById, insertOnlineMap, updateOnlineMap, deleteOnlineMap, closeOnlineMapByAddressPort,
+  getOpenOnlineMapsByName
 } = require('./postgreService');
+
+const { generateOdinToken, generateOdinTokenForMap, roomGenerate } = require('./odinService');
 
 const app = express();
 const port = 3000;
@@ -199,6 +203,98 @@ app.delete('/maps/:id', async (req, res) => {
     res.status(500).json({ ok: false, error: err.message });
   }
 });
+
+
+// --- ONLINE MAPS ENDPOINTS ---
+// Endpoint para cerrar un online_map por address y port
+app.put('/online-maps/close', async (req, res) => {
+  try {
+    console.log(`Closing online_map at address: ${req.connection.remoteAddress}, port: ${req.body.port}`);
+    // Validar que req.body existe y tiene el campo port
+    if (!req.body || !req.body.port) {
+      return res.status(400).json({ 
+        ok: false, 
+        error: 'Request body must include "port" field' 
+      });
+    }
+    
+    const { port } = req.body;
+    
+    const data = await closeOnlineMapByAddressPort(req.connection.remoteAddress, port);
+    res.json({ ok: true, data });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+app.get('/online-maps', async (req, res) => {
+  try {
+    const data = await getAllOnlineMaps();
+    res.json({ ok: true, data });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+// Get open online maps by name
+app.get('/online-maps/:name', async (req, res) => {
+  try {
+    const data = await getOpenOnlineMapsByName(req.params.name);
+    res.json({ 
+      ok: true, 
+      data,
+      count: data.length,
+      search_term: req.params.name
+    });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+app.get('/online-maps/:id', async (req, res) => {
+  try {
+    const data = await getOnlineMapById(req.params.id);
+    if (!data) return res.status(404).json({ ok: false, error: 'Online map not found' });
+    res.json({ ok: true, data });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+app.post('/online-maps', async (req, res) => {
+  try {
+    console.log(req.body)
+    const data = await insertOnlineMap(req);
+    res.status(201).json({ ok: true, data });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+app.put('/online-maps/:id', async (req, res) => {
+  try {
+    const data = await updateOnlineMap(req.params.id, req.body);
+    if (!data) return res.status(404).json({ ok: false, error: 'Online map not found' });
+    res.json({ ok: true, data });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+app.delete('/online-maps/:id', async (req, res) => {
+  try {
+    const data = await deleteOnlineMap(req.params.id);
+    if (!data) return res.status(404).json({ ok: false, error: 'Online map not found' });
+    res.json({ ok: true, data });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+// --- ODIN4PLAYERS ENDPOINTS ---
+// Endpoint del server-standalone original
+app.post('/odin/token', roomGenerate);
+
 
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);  
