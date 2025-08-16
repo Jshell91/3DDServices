@@ -383,23 +383,16 @@ Odin4Players es una plataforma de comunicación de voz y texto en tiempo real di
 
 ### Endpoints
 
-- **POST /odin/token** — Genera un token para una sala de chat (compatible con server-standalone original)
+- **GET /odin/token** — Genera un token para una sala de chat
 
 Todos los endpoints requieren el header `x-api-key`.
 
 #### Ejemplo: Generar token para sala de chat
 ```http
-POST /odin/token HTTP/1.1
+GET /odin/token?room_name=general_chat&user_id=player_001&name=PlayerName HTTP/1.1
 Host: your-server:3000
-Content-Type: application/json
 x-api-key: YOUR_API_KEY_HERE
-
-{
-  "room_name": "general_chat",
-  "user_id": "player_001"
-}
 ```
-*Nota: Este endpoint es compatible con el formato del server-standalone original.*
 
 #### Respuesta exitosa
 ```json

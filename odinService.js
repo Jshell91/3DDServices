@@ -7,6 +7,9 @@ const odinGenerator = new TokenGenerator(process.env.ODIN_ACCESS_KEY);
 
 // Función original del server-standalone.js
 const roomGenerate = (req, res) => {
+    // Log manual para simular Morgan
+    console.log(`${req.method} ${req.originalUrl} - ${req.ip} - ${new Date().toISOString()}`);
+    
     const url = new URL(req.url || '/', `http://${req.headers.host || 'hostname'}`);
     const roomId = url.searchParams.get('room_name') || 'default';
     const userId = url.searchParams.get('user_id') || 'unknown';
@@ -19,19 +22,22 @@ const roomGenerate = (req, res) => {
     res.end();
 };
 
-// Generate a token for Odin voice/text chat (para endpoint /odin/token)
-function generateOdinToken(roomId, userId) {
-  if (!roomId || !userId) {
-    throw new Error('roomId and userId are required');
+// Generate a token for Odin voice/text chat (endpoint estándar de Express)
+function generateOdinTokenStandard(params) {
+  const { room_name: roomName, user_id: userId, name: userName = 'Anonymous' } = params;
+  
+  if (!roomName || !userId) {
+    throw new Error('room_name and user_id are required');
   }
   
-  const token = odinGenerator.createToken(roomId, userId);
-  console.log(`Generated Odin token for user '${userId}' in room '${roomId}'`);
+  const token = odinGenerator.createToken(roomName, userId);
+  console.log(`Generated Odin token for '${userName}' in room '${roomName}'`);
   
   return {
     token: token,
-    room_id: roomId,
+    room_name: roomName,
     user_id: userId,
+    user_name: userName,
     generated_at: new Date().toISOString()
   };
 }
@@ -48,6 +54,6 @@ function generateOdinTokenForMap(mapId, userId) {
 
 module.exports = {
   roomGenerate,
-  generateOdinToken,
+  generateOdinTokenStandard,
   generateOdinTokenForMap
 };

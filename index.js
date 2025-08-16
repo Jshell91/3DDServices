@@ -14,7 +14,7 @@ const {
   getOpenOnlineMapsByName
 } = require('./postgreService');
 
-const { generateOdinToken, generateOdinTokenForMap, roomGenerate } = require('./odinService');
+const odinService = require('./odinService');
 
 const app = express();
 const port = 3000;
@@ -293,7 +293,16 @@ app.delete('/online-maps/:id', async (req, res) => {
 
 // --- ODIN4PLAYERS ENDPOINTS ---
 // Endpoint del server-standalone original
-app.get('/odin/token', roomGenerate);
+// Odin token endpoint (GET with query parameters)
+app.get('/odin/token', async (req, res) => {
+  try {
+    const result = await odinService.generateOdinTokenStandard(req.query);
+    res.json(result);
+  } catch (error) {
+    console.error('Error generating Odin token:', error);
+    res.status(500).json({ error: 'Error generating Odin token' });
+  }
+});
 
 
 app.listen(port, () => {
