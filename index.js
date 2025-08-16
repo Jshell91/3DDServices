@@ -35,23 +35,12 @@ app.use((req, res, next) => {
 });
 
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      frameSrc: ["'none'"],
-    },
-  },
-  crossOriginOpenerPolicy: false, // Disable for HTTP in production
+  contentSecurityPolicy: false, // Disable CSP completely for now
+  crossOriginOpenerPolicy: false,
   crossOriginResourcePolicy: false,
   crossOriginEmbedderPolicy: false,
-  originAgentCluster: false, // Disable origin agent cluster
+  originAgentCluster: false,
+  referrerPolicy: false
 }));
 app.use(cors({
   origin: [
@@ -162,7 +151,12 @@ app.get('/', (req, res) => {
 
 // Dashboard endpoint (redirect to dashboard.html)
 app.get('/admin', (req, res) => {
-  res.redirect('/dashboard/dashboard.html');
+  res.redirect('/dashboard/dashboard-simple.html');
+});
+
+// Alternative dashboard route
+app.get('/dashboard-simple', (req, res) => {
+  res.redirect('/dashboard/dashboard-simple.html');
 });
 
 // Admin authentication endpoints
@@ -319,9 +313,11 @@ app.get('/admin/api/stats', requireAdmin, async (req, res) => {
 // Apply API key middleware to all routes EXCEPT dashboard static files and specific routes
 app.use((req, res, next) => {
   // Skip API key for dashboard static files and admin redirect
-  if (req.path.startsWith('/dashboard') || req.path === '/admin' || req.path === '/') {
+  if (req.path.startsWith('/dashboard') || req.path === '/admin' || req.path === '/' || req.path === '/health' || req.path === '/api/info' || req.path === '/dashboard-simple') {
+    console.log(`📝 Allowing request to: ${req.path}`);
     return next();
   }
+  console.log(`🔐 Checking API key for: ${req.path}`);
   return apiKeyAuth(req, res, next);
 });
 
