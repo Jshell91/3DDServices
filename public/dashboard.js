@@ -1,5 +1,6 @@
 // Dashboard JavaScript
-const API_BASE = 'http://localhost:3000';
+// Use relative URLs instead of absolute to avoid HTTPS issues
+const API_BASE = window.location.origin;
 
 // Check authentication on page load
 window.addEventListener('DOMContentLoaded', async () => {

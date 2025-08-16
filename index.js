@@ -27,10 +27,29 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
     },
   },
+  crossOriginOpenerPolicy: false, // Disable for HTTP in production
+  crossOriginResourcePolicy: false,
+  crossOriginEmbedderPolicy: false,
+  originAgentCluster: false, // Disable origin agent cluster
 }));
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://157.230.112.247:3000',
+    'https://157.230.112.247:3000'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
+}));
 app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -41,13 +60,30 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: { 
-    secure: false, // set to true in production with HTTPS
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    secure: false, // Keep false for HTTP in production
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax'
   }
 }));
 
 // Serve static files for dashboard (no API key required)
 app.use('/dashboard', express.static('public'));
+
+// Serve favicon
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end();
+});
+
+// Add basic server info endpoint
+app.get('/api/info', (req, res) => {
+  res.json({
+    ok: true,
+    server: '3DDServices',
+    version: '1.1.0',
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Limit to 100 requests per IP every 15 minutes
 const limiter = rateLimit({
@@ -70,12 +106,14 @@ function apiKeyAuth(req, res, next) {
 
 // Routes that don't need API key
 app.get('/', (req, res) => {
-  res.send("3DDSocialServices, you shouldn't be here.");
-});
-
-// Favicon endpoint (avoid 401 errors)
-app.get('/favicon.ico', (req, res) => {
-  res.status(204).end();
+  res.json({
+    message: "3DDSocialServices API",
+    version: "1.1.0",
+    endpoints: {
+      dashboard: "/admin",
+      api_docs: "/api/info"
+    }
+  });
 });
 
 // Dashboard endpoint (redirect to dashboard.html)
@@ -498,6 +536,12 @@ app.get('/odin/token', async (req, res) => {
 });
 
 
-app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);  
+app.listen(port, '0.0.0.0', () => {
+  console.log(`\n🚀 3DDServices Server started successfully!`);
+  console.log(`📊 Server running on: http://0.0.0.0:${port}`);
+  console.log(`🎛️  Admin Dashboard: http://0.0.0.0:${port}/admin`);
+  console.log(`🔗 API Info: http://0.0.0.0:${port}/api/info`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📅 Started at: ${new Date().toISOString()}`);
+  console.log(`\n✅ Ready to accept connections...\n`);
 });
