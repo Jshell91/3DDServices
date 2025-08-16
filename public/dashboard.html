@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3DD Services Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎮 3DD Services Dashboard</h1>
+            <p>Panel de administración y consultas</p>
+            <button id="logout-btn" class="logout-btn">🚪 Logout</button>
+        </header>
+
+        <div class="dashboard">
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>👁️ Total Visits</h3>
+                    <div class="stat-number" id="totalPlayers">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>❤️ Total Likes</h3>
+                    <div class="stat-number" id="totalLikes">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>🗺️ Maps Available</h3>
+                    <div class="stat-number" id="totalMaps">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>🌐 Online Maps</h3>
+                    <div class="stat-number" id="onlineMaps">-</div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-button active" data-tab="players">Players</button>
+                <button class="tab-button" data-tab="likes">Artwork Likes</button>
+                <button class="tab-button" data-tab="maps">Maps</button>
+                <button class="tab-button" data-tab="online-maps">Online Maps</button>
+                <button class="tab-button" data-tab="open-maps">Open Maps</button>
+            </div>
+
+            <!-- Content Sections -->
+            <div class="tab-content">
+                <!-- Players Tab -->
+                <div id="players" class="tab-panel active">
+                    <h2>Players by Level</h2>
+                    <div class="table-container">
+                        <table id="playersTable">
+                            <thead>
+                                <tr>
+                                    <th>Level Name</th>
+                                    <th>Player Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data loaded via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Likes Tab -->
+                <div id="likes" class="tab-panel">
+                    <h2>Artwork Likes</h2>
+                    <div class="table-container">
+                        <table id="likesTable">
+                            <thead>
+                                <tr>
+                                    <th>Artwork ID</th>
+                                    <th>Total Likes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data loaded via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Maps Tab -->
+                <div id="maps" class="tab-panel">
+                    <h2>Available Maps</h2>
+                    <div class="table-container">
+                        <table id="mapsTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Game Name</th>
+                                    <th>Code Map</th>
+                                    <th>Max Players</th>
+                                    <th>Single Player</th>
+                                    <th>Online</th>
+                                    <th>Visible</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data loaded via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Online Maps Tab -->
+                <div id="online-maps" class="tab-panel">
+                    <h2>Online Maps</h2>
+                    <div class="table-container">
+                        <table id="onlineMapsTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Map Name</th>
+                                    <th>Address</th>
+                                    <th>Port</th>
+                                    <th>Players</th>
+                                    <th>Status</th>
+                                    <th>Opened</th>
+                                    <th>Closed</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data loaded via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Open Maps Tab -->
+                <div id="open-maps" class="tab-panel">
+                    <h2>Open Maps Only</h2>
+                    <div class="table-container">
+                        <table id="openMapsTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Map Name</th>
+                                    <th>Address</th>
+                                    <th>Port</th>
+                                    <th>Players</th>
+                                    <th>Opened</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data loaded via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Refresh Button -->
+            <div class="refresh-section">
+                <button id="refresh-btn" class="refresh-btn">🔄 Refresh Data</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Map Modal -->
+    <div id="editMapModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Map</h3>
+                <span class="close" id="closeModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editMapForm">
+                    <input type="hidden" id="mapId" name="mapId">
+                    
+                    <div class="form-group">
+                        <label for="mapName">Map Name *</label>
+                        <input type="text" id="mapName" name="name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mapGameName">Game Name *</label>
+                        <input type="text" id="mapGameName" name="name_in_game" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mapCodeMap">Code Map</label>
+                        <input type="text" id="mapCodeMap" name="codemap">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mapMaxPlayers">Max Players *</label>
+                        <input type="number" id="mapMaxPlayers" name="max_players" min="1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mapSinglePlayer">Single Player</label>
+                        <select id="mapSinglePlayer" name="is_single_player">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mapOnline">Online</label>
+                        <select id="mapOnline" name="is_online">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mapVisible">Visible in Map Select</label>
+                        <select id="mapVisible" name="visible_map_select">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mapViews">Views</label>
+                        <input type="number" id="mapViews" name="views" min="0" value="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mapSponsor">Sponsor</label>
+                        <input type="text" id="mapSponsor" name="sponsor">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mapImage">Image URL</label>
+                        <input type="url" id="mapImage" name="image">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelEdit">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveMapChanges">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

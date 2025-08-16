@@ -6,6 +6,7 @@ const morgan = require('morgan');
 const helmet = require('helmet');
 const bodyParser = require('body-parser');
 const rateLimit = require('express-rate-limit');
+const session = require('express-session');
 const {
   insertPlayFabPlayerInLevel, testDbConnection, getAllPlayerInLevel, insertPlayerInLevel, countPlayersByLevel,
   insertArtworkLike, countLikesByArtwork, getLikesByArtworkId, hasUserLikedArtwork,
@@ -19,11 +20,34 @@ const odinService = require('./odinService');
 const app = express();
 const port = 3000;
 
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+}));
 app.use(cors());
 app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Session configuration for admin login
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { 
+    secure: false, // set to true in production with HTTPS
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Serve static files for dashboard (no API key required)
+app.use('/dashboard', express.static('public'));
 
 // Limit to 100 requests per IP every 15 minutes
 const limiter = rateLimit({
@@ -44,10 +68,179 @@ function apiKeyAuth(req, res, next) {
   next();
 }
 
-app.use(apiKeyAuth);
-
+// Routes that don't need API key
 app.get('/', (req, res) => {
   res.send("3DDSocialServices, you shouldn't be here.");
+});
+
+// Favicon endpoint (avoid 401 errors)
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end();
+});
+
+// Dashboard endpoint (redirect to dashboard.html)
+app.get('/admin', (req, res) => {
+  res.redirect('/dashboard/dashboard.html');
+});
+
+// Admin authentication endpoints
+app.post('/admin/login', (req, res) => {
+  const { password } = req.body;
+  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123'; // Set in .env file
+  
+  if (password === adminPassword) {
+    req.session.isAdmin = true;
+    res.json({ ok: true, message: 'Login successful' });
+  } else {
+    res.status(401).json({ ok: false, error: 'Invalid password' });
+  }
+});
+
+app.post('/admin/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      res.status(500).json({ ok: false, error: 'Could not log out' });
+    } else {
+      res.json({ ok: true, message: 'Logged out successfully' });
+    }
+  });
+});
+
+app.get('/admin/check', (req, res) => {
+  res.json({ 
+    ok: true, 
+    isAuthenticated: !!req.session.isAdmin 
+  });
+});
+
+// Middleware to check admin authentication
+function requireAdmin(req, res, next) {
+  if (req.session.isAdmin) {
+    next();
+  } else {
+    res.status(401).json({ ok: false, error: 'Admin authentication required' });
+  }
+}
+
+// Protected admin endpoints for dashboard data
+app.get('/admin/api/players', requireAdmin, async (req, res) => {
+  try {
+    const data = await countPlayersByLevel();
+    res.json({ ok: true, data });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+app.get('/admin/api/likes', requireAdmin, async (req, res) => {
+  try {
+    const data = await countLikesByArtwork();
+    res.json({ ok: true, data });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+app.get('/admin/api/maps', requireAdmin, async (req, res) => {
+  try {
+    const data = await getAllMaps();
+    res.json({ ok: true, data });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+// Update a map
+app.put('/admin/api/maps/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, game_name, codemap, max_players, single_player, online, visible_map_select, views, sponsor, image } = req.body;
+    
+    // Validate required fields
+    if (!name || !game_name || max_players === undefined) {
+      return res.status(400).json({ ok: false, error: 'Missing required fields' });
+    }
+    
+    // Validate data types
+    if (isNaN(max_players) || max_players < 1) {
+      return res.status(400).json({ ok: false, error: 'max_players must be a positive number' });
+    }
+    
+    const updateData = {
+      name: name.trim(),
+      name_in_game: game_name.trim(),
+      max_players: parseInt(max_players),
+      is_single_player: Boolean(single_player),
+      is_online: Boolean(online)
+    };
+    
+    // Add optional fields if provided
+    if (codemap !== undefined) {
+      updateData.codemap = codemap.trim();
+    }
+    if (visible_map_select !== undefined) {
+      updateData.visible_map_select = Boolean(visible_map_select);
+    }
+    if (views !== undefined) {
+      updateData.views = parseInt(views) || 0;
+    }
+    if (sponsor !== undefined) {
+      updateData.sponsor = sponsor.trim();
+    }
+    if (image !== undefined) {
+      updateData.image = image.trim();
+    }
+    
+    const data = await updateMap(id, updateData);
+    
+    res.json({ ok: true, message: 'Map updated successfully', data });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+app.get('/admin/api/online-maps', requireAdmin, async (req, res) => {
+  try {
+    const data = await getAllOnlineMaps();
+    res.json({ ok: true, data });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+app.get('/admin/api/stats', requireAdmin, async (req, res) => {
+  try {
+    const playersData = await countPlayersByLevel();
+    const likesData = await countLikesByArtwork();
+    const mapsData = await getAllMaps();
+    const onlineMapsData = await getAllOnlineMaps();
+    
+    const totalPlayers = playersData.reduce((sum, level) => sum + parseInt(level.count), 0);
+    const totalLikes = likesData.reduce((sum, artwork) => sum + parseInt(artwork.likes), 0);
+    const totalMaps = mapsData.length;
+    const onlineMaps = onlineMapsData.filter(map => map.status === 'open').length;
+    
+    res.json({
+      ok: true,
+      stats: {
+        totalPlayers,
+        totalLikes,
+        totalMaps,
+        onlineMaps
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+// Apply API key middleware to all routes EXCEPT dashboard static files and specific routes
+app.use((req, res, next) => {
+  // Skip API key for dashboard static files and admin redirect
+  if (req.path.startsWith('/dashboard') || req.path === '/admin' || req.path === '/') {
+    return next();
+  }
+  return apiKeyAuth(req, res, next);
 });
 
 // Endpoint to test PostgreSQL connection
