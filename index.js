@@ -293,7 +293,7 @@ app.delete('/online-maps/:id', async (req, res) => {
 
 // --- ODIN4PLAYERS ENDPOINTS ---
 // Endpoint del server-standalone original
-app.post('/odin/token', roomGenerate);
+app.get('/odin/token', roomGenerate);
 
 
 app.listen(port, () => {
