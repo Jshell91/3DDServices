@@ -18,7 +18,21 @@ const {
 const odinService = require('./odinService');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
+
+// Configure Express to handle connection issues
+app.set('trust proxy', 1); // Trust first proxy
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Add keep-alive and timeout settings
+app.use((req, res, next) => {
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Keep-Alive', 'timeout=5, max=1000');
+  req.setTimeout(30000); // 30 second timeout
+  res.setTimeout(30000);
+  next();
+});
 
 app.use(helmet({
   contentSecurityPolicy: {
@@ -67,21 +81,51 @@ app.use(session({
   }
 }));
 
-// Serve static files for dashboard (no API key required)
-app.use('/dashboard', express.static('public'));
+// Serve static files for dashboard with better caching and error handling
+app.use('/dashboard', express.static('public', {
+  maxAge: '1d', // Cache for 1 day
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, path) => {
+    // Set proper MIME types
+    if (path.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    } else if (path.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    } else if (path.endsWith('.html')) {
+      res.setHeader('Content-Type', 'text/html');
+    }
+    // Prevent caching issues
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 day
+  }
+}));
 
-// Serve favicon
+// Serve favicon with proper handling
 app.get('/favicon.ico', (req, res) => {
+  res.setHeader('Content-Type', 'image/x-icon');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
   res.status(204).end();
+});
+
+// Add health check endpoint
+app.get('/health', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
 });
 
 // Add basic server info endpoint
 app.get('/api/info', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
   res.json({
     ok: true,
     server: '3DDServices',
     version: '1.1.0',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
@@ -541,7 +585,14 @@ app.listen(port, '0.0.0.0', () => {
   console.log(`📊 Server running on: http://0.0.0.0:${port}`);
   console.log(`🎛️  Admin Dashboard: http://0.0.0.0:${port}/admin`);
   console.log(`🔗 API Info: http://0.0.0.0:${port}/api/info`);
+  console.log(`💚 Health Check: http://0.0.0.0:${port}/health`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📅 Started at: ${new Date().toISOString()}`);
   console.log(`\n✅ Ready to accept connections...\n`);
+}).on('error', (err) => {
+  console.error('❌ Server startup error:', err);
+}).on('connection', (socket) => {
+  // Handle socket connections to prevent reset issues
+  socket.setTimeout(30000); // 30 second timeout
+  socket.setKeepAlive(true, 1000); // Keep alive every second
 });
