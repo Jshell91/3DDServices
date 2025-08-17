@@ -230,7 +230,7 @@ app.get('/admin/api/maps', requireAdmin, async (req, res) => {
 app.put('/admin/api/maps/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, game_name, codemap, max_players, single_player, online, visible_map_select, views, sponsor, image } = req.body;
+    const { name, game_name, codemap, max_players, single_player, online, visible_map_select, views, sponsor, image, display_order } = req.body;
     
     // Validate required fields
     if (!name || !game_name || max_players === undefined) {
@@ -259,6 +259,9 @@ app.put('/admin/api/maps/:id', requireAdmin, async (req, res) => {
     }
     if (views !== undefined) {
       updateData.views = parseInt(views) || 0;
+    }
+    if (display_order !== undefined) {
+      updateData.display_order = parseInt(display_order);
     }
     if (sponsor !== undefined) {
       updateData.sponsor = sponsor.trim();
