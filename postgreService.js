@@ -360,8 +360,8 @@ async function updateMap(id, map) {
     throw new Error('display_order must be greater than 0');
   }
   
-  // Only allow updating certain fields
-  const fields = ['name', 'map', 'codemap', 'is_single_player', 'name_in_game', 'is_online', 'visible_map_select', 'views', 'sponsor', 'image', 'max_players', 'display_order'];
+  // Only allow updating certain fields - REMOVED 'map' field that doesn't exist
+  const fields = ['name', 'codemap', 'is_single_player', 'name_in_game', 'is_online', 'visible_map_select', 'views', 'sponsor', 'image', 'max_players', 'display_order'];
   const set = [];
   const values = [];
   let idx = 1;
@@ -373,11 +373,10 @@ async function updateMap(id, map) {
     }
   }
   if (set.length === 0) throw new Error('No valid fields to update');
-  values.push(id);
-  const result = await pool.query(
-    `UPDATE maps SET ${set.join(', ')} WHERE id = $${idx} RETURNING *`,
-    values
-  );
+  values.push(parseInt(id)); // Convert ID to integer
+  
+  const sql = `UPDATE maps SET ${set.join(', ')} WHERE id = $${idx} RETURNING *`;
+  const result = await pool.query(sql, values);
   return result.rows[0];
 }
 

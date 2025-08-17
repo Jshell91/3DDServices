@@ -1,5 +1,9 @@
 
 require('dotenv').config();
+
+// Suprimir warning de MemoryStore en desarrollo
+process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
@@ -230,8 +234,6 @@ app.get('/admin/api/maps', requireAdmin, async (req, res) => {
 app.put('/admin/api/maps/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    console.log('🔄 PUT /admin/api/maps/' + id);
-    console.log('📥 Request body:', req.body);
     
     const { name, game_name, codemap, max_players, single_player, online, visible_map_select, views, sponsor, image, display_order } = req.body;
     
@@ -281,14 +283,11 @@ app.put('/admin/api/maps/:id', requireAdmin, async (req, res) => {
       updateData.image = image.trim();
     }
     
-    
     const data = await updateMap(id, updateData);
     
     res.json({ ok: true, message: 'Map updated successfully', data });
   } catch (error) {
-    console.error('❌ Error updating map:', error.message);
-    console.error('🔍 Stack trace:', error.stack);
-    console.error('📦 Update data was:', JSON.stringify(req.body, null, 2));
+    console.error('Error updating map:', error.message);
     res.status(500).json({ ok: false, error: error.message });
   }
 });
