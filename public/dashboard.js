@@ -74,9 +74,14 @@ async function checkAuth() {
 }
 
 // Utility function to make authenticated API calls
-async function apiCall(endpoint) {
+async function apiCall(endpoint, options = {}) {
     try {
-        const response = await fetch(`${API_BASE}${endpoint}`);
+        const fetchOptions = {
+            method: 'GET',
+            ...options
+        };
+        
+        const response = await fetch(`${API_BASE}${endpoint}`, fetchOptions);
         
         if (response.status === 401) {
             // Redirect to login if unauthorized
@@ -648,15 +653,13 @@ async function saveMapFromModal() {
     };
     
     try {
-        const response = await fetch(`/admin/api/maps/${mapId}`, {
+        const result = await apiCall(`/admin/api/maps/${mapId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(updateData)
         });
-        
-        const result = await response.json();
         
         if (result.ok) {
             closeModal();
