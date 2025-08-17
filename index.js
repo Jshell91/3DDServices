@@ -285,6 +285,9 @@ app.put('/admin/api/maps/:id', requireAdmin, async (req, res) => {
     
     res.json({ ok: true, message: 'Map updated successfully', data });
   } catch (error) {
+    console.error('❌ Error updating map:', error.message);
+    console.error('🔍 Stack trace:', error.stack);
+    console.error('📦 Update data:', updateData);
     res.status(500).json({ ok: false, error: error.message });
   }
 });

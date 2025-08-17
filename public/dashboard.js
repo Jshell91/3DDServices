@@ -205,21 +205,17 @@ async function loadLikes() {
 
 // Load maps data
 async function loadMaps() {
-    console.log('🗺️ Loading maps data...');
     const tableBody = document.querySelector('#maps-tbody');
     if (!tableBody) {
         console.error('❌ Table body #maps-tbody not found');
         return;
     }
     
-    console.log('✅ Table body found, setting loading message...');
     tableBody.innerHTML = '<tr><td colspan="9" class="loading">Loading maps data...</td></tr>';
     
     const data = await apiCall('/admin/api/maps');
-    console.log('📊 API response:', data);
     
     if (data.ok && data.data) {
-        console.log(`📋 Got ${data.data.length} maps`);
         // Store maps data globally for drag & drop
         window.mapsData = data.data;
         
@@ -233,14 +229,10 @@ async function loadMaps() {
 
 // Render maps table
 function renderMapsTable() {
-    console.log('🎨 Rendering maps table...');
     const tableBody = document.querySelector('#maps-tbody');
     tableBody.innerHTML = '';
     
-    console.log(`📊 Rendering ${window.mapsData.length} maps`);
-    
     window.mapsData.forEach((map, index) => {
-        console.log(`📋 Rendering map ${index + 1}: ${map.name} (order: ${map.display_order})`);
         const row = document.createElement('tr');
         row.dataset.mapId = map.id;
         
@@ -316,8 +308,6 @@ function renderMapsTable() {
         
         tableBody.appendChild(row);
     });
-    
-    console.log('✅ Table rendered successfully');
 }
 
 // Initialize drag & drop functionality
