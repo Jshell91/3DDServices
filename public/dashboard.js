@@ -517,17 +517,21 @@ async function updateMapOrder(mapId, newOrder) {
             return;
         }
         
+        console.log('🔄 Updating map order:', { mapId, newOrder: order });
         showMessage('Updating order...', 'info');
+        
+        const requestBody = { display_order: order };
+        console.log('📤 Request body:', requestBody);
         
         const result = await apiCall(`/admin/api/maps/${mapId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                display_order: order
-            })
+            body: JSON.stringify(requestBody)
         });
+        
+        console.log('📥 Response:', result);
         
         if (result.ok) {
             showMessage('Order updated successfully!', 'success');

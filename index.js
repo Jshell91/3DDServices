@@ -230,25 +230,36 @@ app.get('/admin/api/maps', requireAdmin, async (req, res) => {
 app.put('/admin/api/maps/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
+    console.log('🔄 PUT /admin/api/maps/' + id);
+    console.log('📥 Request body:', req.body);
+    
     const { name, game_name, codemap, max_players, single_player, online, visible_map_select, views, sponsor, image, display_order } = req.body;
     
-    // Validate required fields
-    if (!name || !game_name || max_players === undefined) {
+    // Si solo se actualiza display_order, no validar otros campos
+    const isOnlyDisplayOrderUpdate = display_order !== undefined && 
+                                   !name && !game_name && max_players === undefined &&
+                                   !codemap && single_player === undefined && online === undefined &&
+                                   visible_map_select === undefined && views === undefined &&
+                                   !sponsor && !image;
+    
+    // Validate required fields (solo si no es actualización de display_order únicamente)
+    if (!isOnlyDisplayOrderUpdate && (!name || !game_name || max_players === undefined)) {
       return res.status(400).json({ ok: false, error: 'Missing required fields' });
     }
     
     // Validate data types
-    if (isNaN(max_players) || max_players < 1) {
+    if (!isOnlyDisplayOrderUpdate && (isNaN(max_players) || max_players < 1)) {
       return res.status(400).json({ ok: false, error: 'max_players must be a positive number' });
     }
     
-    const updateData = {
-      name: name.trim(),
-      name_in_game: game_name.trim(),
-      max_players: parseInt(max_players),
-      is_single_player: Boolean(single_player),
-      is_online: Boolean(online)
-    };
+    const updateData = {};
+    
+    // Solo agregar campos si no son undefined/null
+    if (name) updateData.name = name.trim();
+    if (game_name) updateData.name_in_game = game_name.trim();
+    if (max_players !== undefined) updateData.max_players = parseInt(max_players);
+    if (single_player !== undefined) updateData.is_single_player = Boolean(single_player);
+    if (online !== undefined) updateData.is_online = Boolean(online);
     
     // Add optional fields if provided
     if (codemap !== undefined) {
