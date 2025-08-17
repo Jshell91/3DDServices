@@ -183,6 +183,7 @@ module.exports = {
   getLikesByArtworkId,
   hasUserLikedArtwork,
   getAllMaps,
+  getAllMapsAdmin,
   getMapById,
   insertMap,
   updateMap,
@@ -290,9 +291,15 @@ async function deleteOnlineMap(id) {
   return result.rows[0];
 }
 
-// Get all maps
+// Get all maps (visible only)
 async function getAllMaps() {
-  const result = await pool.query('SELECT * FROM maps WHERE visible_map_select = true ORDER BY id ASC');
+  const result = await pool.query('SELECT * FROM maps WHERE visible_map_select = true ORDER BY display_order ASC');
+  return result.rows;
+}
+
+// Get all maps for admin (including invisible)
+async function getAllMapsAdmin() {
+  const result = await pool.query('SELECT * FROM maps ORDER BY display_order ASC');
   return result.rows;
 }
 
@@ -311,9 +318,21 @@ async function insertMap(map) {
       throw new Error(`The required field '${field}' is missing or null.`);
     }
   }
+  
+  // Si no se proporciona display_order, usar el siguiente valor disponible
+  if (!map.display_order) {
+    const maxResult = await pool.query('SELECT COALESCE(MAX(display_order), 0) + 1 as next_order FROM maps');
+    map.display_order = maxResult.rows[0].next_order;
+  }
+  
+  // Validar que display_order sea positivo
+  if (map.display_order <= 0) {
+    throw new Error('display_order must be greater than 0');
+  }
+  
   const result = await pool.query(
-    `INSERT INTO maps (name, map, codemap, is_single_player, name_in_game, is_online, visible_map_select, views, sponsor, image, max_players)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+    `INSERT INTO maps (name, map, codemap, is_single_player, name_in_game, is_online, visible_map_select, views, sponsor, image, max_players, display_order)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
     [
       map.name,
       map.map,
@@ -325,7 +344,8 @@ async function insertMap(map) {
       map.views,
       map.sponsor,
       map.image,
-      map.max_players
+      map.max_players,
+      map.display_order
     ]
   );
   return result.rows[0];
@@ -334,8 +354,14 @@ async function insertMap(map) {
 // Update a map by id
 async function updateMap(id, map) {
   if (!id) throw new Error('id is required');
+  
+  // Validar display_order si se proporciona
+  if (map.display_order !== undefined && map.display_order <= 0) {
+    throw new Error('display_order must be greater than 0');
+  }
+  
   // Only allow updating certain fields
-  const fields = ['name', 'map', 'codemap', 'is_single_player', 'name_in_game', 'is_online', 'visible_map_select', 'views', 'sponsor', 'image', 'max_players'];
+  const fields = ['name', 'map', 'codemap', 'is_single_player', 'name_in_game', 'is_online', 'visible_map_select', 'views', 'sponsor', 'image', 'max_players', 'display_order'];
   const set = [];
   const values = [];
   let idx = 1;

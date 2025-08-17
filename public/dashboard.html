@@ -84,23 +84,24 @@
 
                 <!-- Maps Tab -->
                 <div id="maps" class="tab-panel">
-                    <h2>Available Maps</h2>
+                    <h2>🗺️ Maps Management</h2>
+                    <p>Use the Order input field to change the display order. Changes are saved automatically.</p>
                     <div class="table-container">
                         <table id="mapsTable">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
-                                    <th>Name</th>
-                                    <th>Game Name</th>
-                                    <th>Code Map</th>
-                                    <th>Max Players</th>
-                                    <th>Single Player</th>
-                                    <th>Online</th>
-                                    <th>Visible</th>
-                                    <th>Actions</th>
+                                    <th style="width: 70px;">Order</th>
+                                    <th style="width: 180px;">Name</th>
+                                    <th style="width: 200px;">Game Name</th>
+                                    <th style="width: 150px;">Code Map</th>
+                                    <th style="width: 80px;">Max Players</th>
+                                    <th style="width: 100px;">Single Player</th>
+                                    <th style="width: 70px;">Online</th>
+                                    <th style="width: 70px;">Visible</th>
+                                    <th style="width: 120px;">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="maps-tbody">
                                 <!-- Data loaded via JS -->
                             </tbody>
                         </table>
@@ -173,6 +174,11 @@
                     <input type="hidden" id="mapId" name="mapId">
                     
                     <div class="form-group">
+                        <label for="mapDisplayOrder">Display Order</label>
+                        <input type="number" id="mapDisplayOrder" name="display_order" min="1" value="1">
+                    </div>
+                    
+                    <div class="form-group">
                         <label for="mapName">Map Name *</label>
                         <input type="text" id="mapName" name="name" required>
                     </div>
@@ -239,6 +245,28 @@
         </div>
     </div>
 
+    <!-- Edit Display Order Modal -->
+    <div id="editOrderModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ Edit Display Order</h3>
+                <span class="close" onclick="closeEditOrderModal()">&times;</span>
+            </div>
+            <div id="order-modal-body">
+                <p><strong>Map:</strong> <span id="modal-map-name"></span></p>
+                <p><strong>Current Order:</strong> <span id="modal-current-order"></span></p>
+                <label for="new-order">New Order:</label>
+                <input type="number" id="new-order" class="display-order-input" min="1" style="width: 100px; margin-left: 10px;">
+                <div style="margin-top: 20px; text-align: right;">
+                    <button class="btn btn-secondary" onclick="closeEditOrderModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveOrder()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load SortableJS from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script src="dashboard.js"></script>
 </body>
 </html>

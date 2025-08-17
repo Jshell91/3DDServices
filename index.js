@@ -10,7 +10,7 @@ const session = require('express-session');
 const {
   insertPlayFabPlayerInLevel, testDbConnection, getAllPlayerInLevel, insertPlayerInLevel, countPlayersByLevel,
   insertArtworkLike, countLikesByArtwork, getLikesByArtworkId, hasUserLikedArtwork,
-  getAllMaps, getMapById, insertMap, updateMap, deleteMap,
+  getAllMaps, getAllMapsAdmin, getMapById, insertMap, updateMap, deleteMap,
   getAllOnlineMaps, getOnlineMapById, insertOnlineMap, updateOnlineMap, deleteOnlineMap, closeOnlineMapByAddressPort,
   getOpenOnlineMapsByName
 } = require('./postgreService');
@@ -151,7 +151,7 @@ app.get('/', (req, res) => {
 
 // Dashboard endpoint (redirect to dashboard.html)
 app.get('/admin', (req, res) => {
-  res.redirect('/dashboard/dashboard-simple.html');
+  res.redirect('/dashboard/dashboard.html');
 });
 
 // Alternative dashboard route
@@ -219,7 +219,7 @@ app.get('/admin/api/likes', requireAdmin, async (req, res) => {
 
 app.get('/admin/api/maps', requireAdmin, async (req, res) => {
   try {
-    const data = await getAllMaps();
+    const data = await getAllMapsAdmin(); // Use admin function to get ALL maps
     res.json({ ok: true, data });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
@@ -288,7 +288,7 @@ app.get('/admin/api/stats', requireAdmin, async (req, res) => {
   try {
     const playersData = await countPlayersByLevel();
     const likesData = await countLikesByArtwork();
-    const mapsData = await getAllMaps();
+    const mapsData = await getAllMapsAdmin(); // Use admin function for stats
     const onlineMapsData = await getAllOnlineMaps();
     
     const totalPlayers = playersData.reduce((sum, level) => sum + parseInt(level.count), 0);

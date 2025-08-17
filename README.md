@@ -4,7 +4,8 @@ A comprehensive Node.js web service for managing game analytics, maps, online se
 
 ## 🚀 Main Features
 - **REST API** with Express.js
-- **Admin Dashboard** with authentication
+- **Admin Dashboard** with authentication and maps management
+- **Display Order Management** with drag & drop reordering
 - **Real-time Online Maps** management
 - **Player Analytics** and level tracking
 - **Artwork Likes** system
@@ -87,12 +88,19 @@ Access the admin dashboard at `http://localhost:3000/admin` or `http://localhost
 - **📊 Statistics Overview**: Total visits, likes, maps, and online maps
 - **👥 Players Tab**: View players by level with real-time data
 - **❤️ Artwork Likes Tab**: Monitor artwork popularity
-- **🗺️ Maps Tab**: Complete map management with inline editing
+- **🗺️ Maps Tab**: Complete map management with display order control
 - **🌐 Online Maps Tab**: View all online map sessions with status tracking
 - **🟢 Open Maps Tab**: Filter to show only currently open maps
 - **✏️ Map Editor**: Full modal editor for all map properties
 
+### Maps Management Features
+- **Display Order Control**: Manual input fields and full modal editing
+- **Auto-increment Logic**: Automatic handling of duplicate orders
+- **Real-time Updates**: Changes saved automatically
+- **Comprehensive Editing**: All map properties in single modal
+
 ### Map Editor Fields
+- **Display Order**: Controls map ordering (auto-handles duplicates)
 - **Name*** (required): Display name of the map
 - **Game Name*** (required): Name as shown in-game
 - **Code Map**: Optional code identifier
@@ -105,3 +113,7 @@ Access the admin dashboard at `http://localhost:3000/admin` or `http://localhost
 - **Image URL**: Map thumbnail URL
 
 ## 🔌 API Endpoints
+
+
+
+sudo -i -u 3ddAnalytics

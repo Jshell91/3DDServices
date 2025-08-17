@@ -200,33 +200,126 @@ async function loadLikes() {
 
 // Load maps data
 async function loadMaps() {
-    const tableBody = document.querySelector('#mapsTable tbody');
+    console.log('🗺️ Loading maps data...');
+    const tableBody = document.querySelector('#maps-tbody');
+    if (!tableBody) {
+        console.error('❌ Table body #maps-tbody not found');
+        return;
+    }
+    
+    console.log('✅ Table body found, setting loading message...');
     tableBody.innerHTML = '<tr><td colspan="9" class="loading">Loading maps data...</td></tr>';
     
     const data = await apiCall('/admin/api/maps');
+    console.log('📊 API response:', data);
     
     if (data.ok && data.data) {
-        tableBody.innerHTML = '';
-        data.data.forEach(map => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${map.id}</td>
-                <td>${map.name}</td>
-                <td>${map.name_in_game || 'N/A'}</td>
-                <td>${map.codemap || 'N/A'}</td>
-                <td>${map.max_players}</td>
-                <td><span class="boolean-${map.is_single_player}">${map.is_single_player ? 'Yes' : 'No'}</span></td>
-                <td><span class="boolean-${map.is_online}">${map.is_online ? 'Yes' : 'No'}</span></td>
-                <td><span class="boolean-${map.visible_map_select}">${map.visible_map_select ? 'Yes' : 'No'}</span></td>
-                <td class="actions">
-                    <button class="select-btn" data-map-id="${map.id}">📝 Edit</button>
-                </td>
-            `;
-            tableBody.appendChild(row);
-        });
+        console.log(`📋 Got ${data.data.length} maps`);
+        // Store maps data globally for drag & drop
+        window.mapsData = data.data;
+        
+        renderMapsTable();
+        initializeDragDrop();
     } else {
+        console.error('❌ Error in API response:', data);
         tableBody.innerHTML = '<tr><td colspan="9">Error loading data</td></tr>';
     }
+}
+
+// Render maps table
+function renderMapsTable() {
+    console.log('🎨 Rendering maps table...');
+    const tableBody = document.querySelector('#maps-tbody');
+    tableBody.innerHTML = '';
+    
+    console.log(`📊 Rendering ${window.mapsData.length} maps`);
+    
+    window.mapsData.forEach((map, index) => {
+        console.log(`📋 Rendering map ${index + 1}: ${map.name} (order: ${map.display_order})`);
+        const row = document.createElement('tr');
+        row.dataset.mapId = map.id;
+        
+        // Create individual cells to avoid innerHTML issues
+        row.innerHTML = '';
+        
+        // 1. Order input
+        const orderCell = document.createElement('td');
+        const orderInput = document.createElement('input');
+        orderInput.type = 'number';
+        orderInput.value = map.display_order || (index + 1);
+        orderInput.className = 'display-order-input';
+        orderInput.min = '1';
+        orderInput.setAttribute('onchange', `updateMapOrder(${map.id}, this.value)`);
+        orderCell.appendChild(orderInput);
+        row.appendChild(orderCell);
+        
+        // 2. Name
+        const nameCell = document.createElement('td');
+        nameCell.textContent = map.name;
+        row.appendChild(nameCell);
+        
+        // 3. Game Name
+        const gameNameCell = document.createElement('td');
+        gameNameCell.textContent = map.name_in_game || 'N/A';
+        row.appendChild(gameNameCell);
+        
+        // 4. Code Map
+        const codeMapCell = document.createElement('td');
+        codeMapCell.textContent = map.codemap || 'N/A';
+        row.appendChild(codeMapCell);
+        
+        // 5. Max Players
+        const maxPlayersCell = document.createElement('td');
+        maxPlayersCell.textContent = map.max_players;
+        row.appendChild(maxPlayersCell);
+        
+        // 6. Single Player
+        const singlePlayerCell = document.createElement('td');
+        const singlePlayerSpan = document.createElement('span');
+        singlePlayerSpan.className = `boolean-${map.is_single_player}`;
+        singlePlayerSpan.textContent = map.is_single_player ? 'Yes' : 'No';
+        singlePlayerCell.appendChild(singlePlayerSpan);
+        row.appendChild(singlePlayerCell);
+        
+        // 7. Online
+        const onlineCell = document.createElement('td');
+        const onlineSpan = document.createElement('span');
+        onlineSpan.className = `boolean-${map.is_online}`;
+        onlineSpan.textContent = map.is_online ? 'Yes' : 'No';
+        onlineCell.appendChild(onlineSpan);
+        row.appendChild(onlineCell);
+        
+        // 8. Visible
+        const visibleCell = document.createElement('td');
+        const visibleSpan = document.createElement('span');
+        visibleSpan.className = `boolean-${map.visible_map_select}`;
+        visibleSpan.textContent = map.visible_map_select ? 'Yes' : 'No';
+        visibleCell.appendChild(visibleSpan);
+        row.appendChild(visibleCell);
+        
+        // 9. Actions
+        const actionsCell = document.createElement('td');
+        actionsCell.className = 'actions';
+        
+        const editMapBtn = document.createElement('button');
+        editMapBtn.className = 'select-btn';
+        editMapBtn.textContent = '📝 Edit Map';
+        editMapBtn.setAttribute('onclick', `openEditModal(${map.id})`);
+        actionsCell.appendChild(editMapBtn);
+        
+        row.appendChild(actionsCell);
+        
+        tableBody.appendChild(row);
+    });
+    
+    console.log('✅ Table rendered successfully');
+}
+
+// Initialize drag & drop functionality
+function initializeDragDrop() {
+    // Drag & drop disabled since we removed the drag handle
+    // Users can use the Order input field to change order manually
+    console.log('💡 Drag & drop disabled - use Order input field to change order');
 }
 
 // Load online maps data
@@ -356,10 +449,6 @@ async function logout() {
 
 // Map editing functions
 function openEditModal(mapId) {
-    // Get map data
-    const row = document.querySelector(`button[data-map-id="${mapId}"]`).closest('tr');
-    const cells = row.children;
-    
     // Get all maps data to find the complete record
     apiCall('/admin/api/maps').then(response => {
         if (response.ok) {
@@ -382,8 +471,146 @@ function populateModal(map) {
     document.getElementById('mapOnline').value = map.is_online ? 'true' : 'false';
     document.getElementById('mapVisible').value = map.visible_map_select ? 'true' : 'false';
     document.getElementById('mapViews').value = map.views || 0;
+    document.getElementById('mapDisplayOrder').value = map.display_order || 1;
     document.getElementById('mapSponsor').value = map.sponsor || '';
     document.getElementById('mapImage').value = map.image || '';
+}
+
+// ===== DISPLAY ORDER FUNCTIONS =====
+
+// Save drag order
+async function saveDragOrder() {
+    try {
+        showMessage('Saving new order...', 'info');
+        
+        // Update each map with new order
+        for (const map of window.mapsData) {
+            await apiCall(`/admin/api/maps/${map.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    display_order: map.display_order
+                })
+            });
+        }
+        
+        showMessage('Order updated successfully!', 'success');
+    } catch (error) {
+        showMessage('Error saving order: ' + error.message, 'error');
+        loadMaps(); // Reload to reset
+    }
+}
+
+// Update map order manually
+async function updateMapOrder(mapId, newOrder) {
+    try {
+        const order = parseInt(newOrder);
+        if (order < 1) {
+            showMessage('Order must be greater than 0', 'error');
+            return;
+        }
+        
+        showMessage('Updating order...', 'info');
+        
+        const result = await apiCall(`/admin/api/maps/${mapId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                display_order: order
+            })
+        });
+        
+        if (result.ok) {
+            showMessage('Order updated successfully!', 'success');
+            loadMaps(); // Reload to show changes
+        } else {
+            showMessage('Error updating order: ' + result.error, 'error');
+        }
+    } catch (error) {
+        showMessage('Error updating order: ' + error.message, 'error');
+    }
+}
+
+// Edit map order modal
+function editMapOrder(mapId) {
+    const map = window.mapsData.find(m => m.id === mapId);
+    if (!map) return;
+    
+    window.currentEditingMap = map;
+    document.getElementById('modal-map-name').textContent = map.name;
+    document.getElementById('modal-current-order').textContent = map.display_order;
+    document.getElementById('new-order').value = map.display_order;
+    document.getElementById('editOrderModal').style.display = 'block';
+}
+
+// Close edit order modal
+function closeEditOrderModal() {
+    document.getElementById('editOrderModal').style.display = 'none';
+    window.currentEditingMap = null;
+}
+
+// Save order from modal
+async function saveOrder() {
+    if (!window.currentEditingMap) return;
+    
+    const newOrder = parseInt(document.getElementById('new-order').value);
+    if (newOrder < 1) {
+        showMessage('Order must be greater than 0', 'error');
+        return;
+    }
+    
+    await updateMapOrder(window.currentEditingMap.id, newOrder);
+    closeEditOrderModal();
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('editOrderModal');
+    if (event.target === modal) {
+        closeEditOrderModal();
+    }
+}
+
+// Helper function to show messages
+function showMessage(message, type = 'info') {
+    // Create or update message element
+    let messageEl = document.getElementById('status-message');
+    if (!messageEl) {
+        messageEl = document.createElement('div');
+        messageEl.id = 'status-message';
+        messageEl.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            max-width: 300px;
+        `;
+        document.body.appendChild(messageEl);
+    }
+    
+    // Set color based on type
+    const colors = {
+        info: '#007bff',
+        success: '#28a745',
+        error: '#dc3545'
+    };
+    
+    messageEl.style.backgroundColor = colors[type] || colors.info;
+    messageEl.textContent = message;
+    messageEl.style.display = 'block';
+    
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+        messageEl.style.display = 'none';
+    }, 3000);
 }
 
 function closeModal() {
@@ -415,6 +642,7 @@ async function saveMapFromModal() {
         online: formData.get('is_online') === 'true',
         visible_map_select: formData.get('visible_map_select') === 'true',
         views: parseInt(formData.get('views')) || 0,
+        display_order: parseInt(formData.get('display_order')) || 1,
         sponsor: formData.get('sponsor')?.trim() || '',
         image: formData.get('image')?.trim() || ''
     };
