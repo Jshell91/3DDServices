@@ -281,13 +281,14 @@ app.put('/admin/api/maps/:id', requireAdmin, async (req, res) => {
       updateData.image = image.trim();
     }
     
+    
     const data = await updateMap(id, updateData);
     
     res.json({ ok: true, message: 'Map updated successfully', data });
   } catch (error) {
     console.error('❌ Error updating map:', error.message);
     console.error('🔍 Stack trace:', error.stack);
-    console.error('📦 Update data:', updateData);
+    console.error('📦 Update data was:', JSON.stringify(req.body, null, 2));
     res.status(500).json({ ok: false, error: error.message });
   }
 });
