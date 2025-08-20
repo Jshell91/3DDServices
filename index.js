@@ -580,11 +580,19 @@ app.delete('/online-maps/:id', async (req, res) => {
 });
 
 // --- ODIN4PLAYERS ENDPOINTS ---
-// Endpoint del server-standalone original
-// Odin token endpoint (GET with query parameters)
-app.get('/odin/token', async (req, res) => {
+// Odin token endpoint (POST with JSON body)
+app.post('/odin/token', async (req, res) => {
   try {
-    const result = await odinService.generateOdinTokenStandard(req.query);
+    // Validar que el body tiene los campos requeridos
+    const { room_name, user_id, name } = req.body;
+    
+    if (!room_name || !user_id) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: room_name and user_id are required' 
+      });
+    }
+    
+    const result = await odinService.generateOdinTokenStandard(req.body);
     res.json(result);
   } catch (error) {
     console.error('Error generating Odin token:', error);
