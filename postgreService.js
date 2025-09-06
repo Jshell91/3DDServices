@@ -360,8 +360,8 @@ async function updateMap(id, map) {
     throw new Error('display_order must be greater than 0');
   }
   
-  // Only allow updating certain fields - REMOVED 'map' field that doesn't exist
-  const fields = ['name', 'codemap', 'is_single_player', 'name_in_game', 'is_online', 'visible_map_select', 'views', 'sponsor', 'image', 'max_players', 'display_order'];
+  // Only allow updating certain fields - including 'map' field
+  const fields = ['name', 'map', 'codemap', 'is_single_player', 'name_in_game', 'is_online', 'visible_map_select', 'views', 'sponsor', 'image', 'max_players', 'display_order'];
   const set = [];
   const values = [];
   let idx = 1;

@@ -11,7 +11,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
     
     // If authenticated, load dashboard
-    console.log('Dashboard initializing...');
     
     // Setup event listeners
     setupEventListeners();
@@ -52,11 +51,21 @@ function setupEventListeners() {
     document.getElementById('cancelEdit').addEventListener('click', closeModal);
     document.getElementById('saveMapChanges').addEventListener('click', saveMapFromModal);
     
+    // Add Map Modal event listeners
+    document.getElementById('addMapBtn').addEventListener('click', openAddMapModal);
+    document.getElementById('closeAddMapModal').addEventListener('click', closeAddMapModal);
+    document.getElementById('cancelAddMap').addEventListener('click', closeAddMapModal);
+    document.getElementById('saveNewMap').addEventListener('click', saveNewMapFromModal);
+    
     // Close modal when clicking outside of it
     window.addEventListener('click', (e) => {
         const modal = document.getElementById('editMapModal');
+        const addModal = document.getElementById('addMapModal');
         if (e.target === modal) {
             closeModal();
+        }
+        if (e.target === addModal) {
+            closeAddMapModal();
         }
     });
 }
@@ -314,7 +323,6 @@ function renderMapsTable() {
 function initializeDragDrop() {
     // Drag & drop disabled since we removed the drag handle
     // Users can use the Order input field to change order manually
-    console.log('💡 Drag & drop disabled - use Order input field to change order');
 }
 
 // Load online maps data
@@ -459,6 +467,7 @@ function openEditModal(mapId) {
 function populateModal(map) {
     document.getElementById('mapId').value = map.id;
     document.getElementById('mapName').value = map.name || '';
+    document.getElementById('mapValue').value = map.map || '';
     document.getElementById('mapGameName').value = map.name_in_game || '';
     document.getElementById('mapCodeMap').value = map.codemap || '';
     document.getElementById('mapMaxPlayers').value = map.max_players || 1;
@@ -507,11 +516,9 @@ async function updateMapOrder(mapId, newOrder) {
             return;
         }
         
-        console.log('🔄 Updating map order:', { mapId, newOrder: order });
         showMessage('Updating order...', 'info');
         
         const requestBody = { display_order: order };
-        console.log('📤 Request body:', requestBody);
         
         const result = await apiCall(`/admin/api/maps/${mapId}`, {
             method: 'PUT',
@@ -520,8 +527,6 @@ async function updateMapOrder(mapId, newOrder) {
             },
             body: JSON.stringify(requestBody)
         });
-        
-        console.log('📥 Response:', result);
         
         if (result.ok) {
             showMessage('Order updated successfully!', 'success');
@@ -624,21 +629,23 @@ async function saveMapFromModal() {
     
     // Validate required fields
     const name = formData.get('name').trim();
+    const mapValue = formData.get('map').trim();
     const nameInGame = formData.get('name_in_game').trim();
     const maxPlayers = parseInt(formData.get('max_players'));
     
-    if (!name || !nameInGame || !maxPlayers) {
+    if (!name || !mapValue || !nameInGame || !maxPlayers) {
         alert('Please fill in all required fields (marked with *)');
         return;
     }
     
     const updateData = {
         name: name,
-        game_name: nameInGame,
+        map: mapValue,
+        name_in_game: nameInGame,
         codemap: formData.get('codemap')?.trim() || '',
         max_players: maxPlayers,
-        single_player: formData.get('is_single_player') === 'true',
-        online: formData.get('is_online') === 'true',
+        is_single_player: formData.get('is_single_player') === 'true',
+        is_online: formData.get('is_online') === 'true',
         visible_map_select: formData.get('visible_map_select') === 'true',
         views: parseInt(formData.get('views')) || 0,
         display_order: parseInt(formData.get('display_order')) || 1,
@@ -665,5 +672,75 @@ async function saveMapFromModal() {
     } catch (error) {
         console.error('Error saving map:', error);
         alert('Error saving map. Please try again.');
+    }
+}
+
+// Add Map Modal Functions
+function openAddMapModal() {
+    document.getElementById('addMapModal').style.display = 'block';
+    // Clear form
+    document.getElementById('addMapForm').reset();
+    // Set default values
+    document.getElementById('newMapMaxPlayers').value = 4;
+    document.getElementById('newMapViews').value = 0;
+    document.getElementById('newMapSinglePlayer').value = 'false';
+    document.getElementById('newMapOnline').value = 'true';
+    document.getElementById('newMapVisible').value = 'true';
+}
+
+function closeAddMapModal() {
+    document.getElementById('addMapModal').style.display = 'none';
+}
+
+async function saveNewMapFromModal() {
+    try {
+        const form = document.getElementById('addMapForm');
+        const formData = new FormData(form);
+        
+        // Validate required fields
+        const requiredFields = ['display_order', 'name', 'name_in_game', 'max_players'];
+        for (const field of requiredFields) {
+            if (!formData.get(field) || formData.get(field).trim() === '') {
+                alert(`Please fill in the required field: ${field.replace('_', ' ')}`);
+                return;
+            }
+        }
+        
+        // Prepare data object matching insertMap function requirements
+        const newMapData = {
+            display_order: parseInt(formData.get('display_order')),
+            name: formData.get('name').trim(),
+            map: formData.get('name').trim(), // 'map' field in DB = 'name' from form (same value)
+            name_in_game: formData.get('name_in_game').trim(), // This should be different from name
+            max_players: parseInt(formData.get('max_players')),
+            is_single_player: formData.get('is_single_player') === 'true',
+            is_online: formData.get('is_online') === 'true',
+            visible_map_select: formData.get('visible_map_select') === 'true',
+            views: parseInt(formData.get('views')) || 0,
+            // Required fields that need default values
+            sponsor: formData.get('sponsor') ? formData.get('sponsor').trim() : '',
+            image: formData.get('image') ? formData.get('image').trim() : '',
+            codemap: formData.get('codemap') ? formData.get('codemap').trim() : ''
+        };
+        
+        const result = await apiCall('/maps', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(newMapData)
+        });
+        
+        if (result.ok) {
+            closeAddMapModal();
+            await loadMaps();
+            await refreshAllData(); // Refresh stats too
+            alert('Map created successfully!');
+        } else {
+            alert('Error creating map: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error creating map:', error);
+        alert('Error creating map. Please try again.');
     }
 }

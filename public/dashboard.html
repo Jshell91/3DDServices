@@ -86,6 +86,14 @@
                 <div id="maps" class="tab-panel">
                     <h2>🗺️ Maps Management</h2>
                     <p>Use the Order input field to change the display order. Changes are saved automatically.</p>
+                    
+                    <!-- Add Map Button -->
+                    <div style="margin-bottom: 20px;">
+                        <button type="button" class="btn btn-primary" id="addMapBtn">
+                            ➕ Add New Map
+                        </button>
+                    </div>
+                    
                     <div class="table-container">
                         <table id="mapsTable">
                             <thead>
@@ -184,6 +192,12 @@
                     </div>
                     
                     <div class="form-group">
+                        <label for="mapValue">Map Value *</label>
+                        <input type="text" id="mapValue" name="map" required>
+                        <small>Usually the same as Map Name</small>
+                    </div>
+                    
+                    <div class="form-group">
                         <label for="mapGameName">Game Name *</label>
                         <input type="text" id="mapGameName" name="name_in_game" required>
                     </div>
@@ -261,6 +275,91 @@
                     <button class="btn btn-secondary" onclick="closeEditOrderModal()">Cancel</button>
                     <button class="btn btn-primary" onclick="saveOrder()">Save</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add New Map Modal -->
+    <div id="addMapModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>➕ Add New Map</h3>
+                <span class="close" id="closeAddMapModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="addMapForm">
+                    <div class="form-group">
+                        <label for="newMapDisplayOrder">Display Order <span class="required">*</span></label>
+                        <input type="number" id="newMapDisplayOrder" name="display_order" min="1" required>
+                        <small>Order in which this map appears in the list</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="newMapName">Name <span class="required">*</span></label>
+                        <input type="text" id="newMapName" name="name" required>
+                        <small>Display name of the map</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="newMapGameName">Game Name <span class="required">*</span></label>
+                        <input type="text" id="newMapGameName" name="name_in_game" required>
+                        <small>Name as shown in-game</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="newMapCodeMap">Code Map</label>
+                        <input type="text" id="newMapCodeMap" name="codemap">
+                        <small>Optional code identifier</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="newMapMaxPlayers">Max Players <span class="required">*</span></label>
+                        <input type="number" id="newMapMaxPlayers" name="max_players" min="1" value="4" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="newMapSinglePlayer">Single Player</label>
+                        <select id="newMapSinglePlayer" name="is_single_player">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="newMapOnline">Online</label>
+                        <select id="newMapOnline" name="is_online">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="newMapVisible">Visible in Map Select</label>
+                        <select id="newMapVisible" name="visible_map_select">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="newMapViews">Views</label>
+                        <input type="number" id="newMapViews" name="views" min="0" value="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="newMapSponsor">Sponsor</label>
+                        <input type="text" id="newMapSponsor" name="sponsor">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="newMapImage">Image URL</label>
+                        <input type="url" id="newMapImage" name="image">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelAddMap">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveNewMap">Create Map</button>
             </div>
         </div>
     </div>

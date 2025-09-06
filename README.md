@@ -102,6 +102,7 @@ Access the admin dashboard at `http://localhost:3000/admin` or `http://localhost
 ### Map Editor Fields
 - **Display Order**: Controls map ordering (auto-handles duplicates)
 - **Name*** (required): Display name of the map
+- **Map Value*** (required): Internal map identifier (usually same as Name)
 - **Game Name*** (required): Name as shown in-game
 - **Code Map**: Optional code identifier
 - **Max Players*** (required): Maximum players supported
@@ -111,6 +112,13 @@ Access the admin dashboard at `http://localhost:3000/admin` or `http://localhost
 - **Views**: View count
 - **Sponsor**: Sponsor name
 - **Image URL**: Map thumbnail URL
+
+### New Features (September 2025)
+- **✨ Enhanced Map Creation**: Complete modal with all required fields
+- **✨ Three-Field System**: `name`, `map`, and `name_in_game` for better data organization
+- **✨ Improved Validation**: Frontend and backend validation for all required fields
+- **✨ Production Ready**: Optimized logging and security configurations
+- **✨ Updated Authentication**: Enhanced admin password security
 
 ## 🔌 API Endpoints
 

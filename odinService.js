@@ -14,15 +14,19 @@ console.log('✅ Odin service ready');
 
 // Función original del server-standalone.js
 const roomGenerate = (req, res) => {
-    // Log manual para simular Morgan
-    console.log(`${req.method} ${req.originalUrl} - ${req.ip} - ${new Date().toISOString()}`);
+    // Log manual para simular Morgan (only in development)
+    if (process.env.NODE_ENV !== 'production') {
+        console.log(`${req.method} ${req.originalUrl} - ${req.ip} - ${new Date().toISOString()}`);
+    }
     
     const url = new URL(req.url || '/', `http://${req.headers.host || 'hostname'}`);
     const roomId = url.searchParams.get('room_name') || 'default';
     const userId = url.searchParams.get('user_id') || 'unknown';
     const userName = url.searchParams.get('name') || 'Anonymous';
     const token = odinGenerator.createToken(roomId, userId);
-    console.log(`new token for '${userName}' in '${roomId}' `);
+    if (process.env.NODE_ENV !== 'production') {
+        console.log(`new token for '${userName}' in '${roomId}' `);
+    }
     res.statusCode = 200;    
     res.setHeader('content-type', 'application/json');
     res.write(`{ "token": "${token}"}`);
@@ -54,7 +58,12 @@ function generateOdinTokenStandard(params) {
   
   try {
     const token = odinGenerator.createToken(roomName.trim(), userId.trim());
-    console.log(`🎙️ Odin token generated for user ${userId.trim()} in room ${roomName.trim()}`);
+    // Log token generation (only in development)
+    if (process.env.NODE_ENV !== 'production') {
+        console.log(`🎙️ Odin token generated for user ${userId.trim()} in room ${roomName.trim()}`);
+    }
+    
+    return token;
     
     return {
       token: token,

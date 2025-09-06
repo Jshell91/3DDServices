@@ -235,18 +235,18 @@ app.put('/admin/api/maps/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     
-    const { name, game_name, codemap, max_players, single_player, online, visible_map_select, views, sponsor, image, display_order } = req.body;
+    const { name, map, name_in_game, codemap, max_players, is_single_player, is_online, visible_map_select, views, sponsor, image, display_order } = req.body;
     
     // Si solo se actualiza display_order, no validar otros campos
     const isOnlyDisplayOrderUpdate = display_order !== undefined && 
-                                   !name && !game_name && max_players === undefined &&
-                                   !codemap && single_player === undefined && online === undefined &&
+                                   !name && !map && !name_in_game && max_players === undefined &&
+                                   !codemap && is_single_player === undefined && is_online === undefined &&
                                    visible_map_select === undefined && views === undefined &&
                                    !sponsor && !image;
     
     // Validate required fields (solo si no es actualización de display_order únicamente)
-    if (!isOnlyDisplayOrderUpdate && (!name || !game_name || max_players === undefined)) {
-      return res.status(400).json({ ok: false, error: 'Missing required fields' });
+    if (!isOnlyDisplayOrderUpdate && (!name || !map || !name_in_game || max_players === undefined)) {
+      return res.status(400).json({ ok: false, error: 'Missing required fields: name, map, name_in_game, max_players' });
     }
     
     // Validate data types
@@ -258,10 +258,11 @@ app.put('/admin/api/maps/:id', requireAdmin, async (req, res) => {
     
     // Solo agregar campos si no son undefined/null
     if (name) updateData.name = name.trim();
-    if (game_name) updateData.name_in_game = game_name.trim();
+    if (map) updateData.map = map.trim();
+    if (name_in_game) updateData.name_in_game = name_in_game.trim();
     if (max_players !== undefined) updateData.max_players = parseInt(max_players);
-    if (single_player !== undefined) updateData.is_single_player = Boolean(single_player);
-    if (online !== undefined) updateData.is_online = Boolean(online);
+    if (is_single_player !== undefined) updateData.is_single_player = Boolean(is_single_player);
+    if (is_online !== undefined) updateData.is_online = Boolean(is_online);
     
     // Add optional fields if provided
     if (codemap !== undefined) {
@@ -329,12 +330,23 @@ app.get('/admin/api/stats', requireAdmin, async (req, res) => {
 
 // Apply API key middleware to all routes EXCEPT dashboard static files and specific routes
 app.use((req, res, next) => {
-  // Skip API key for dashboard static files and admin redirect
-  if (req.path.startsWith('/dashboard') || req.path === '/admin' || req.path === '/' || req.path === '/health' || req.path === '/api/info' || req.path === '/dashboard-simple') {
-    console.log(`📝 Allowing request to: ${req.path}`);
+  // Skip API key for dashboard static files, admin routes, and protected admin endpoints
+  if (req.path.startsWith('/dashboard') || 
+      req.path.startsWith('/admin') || 
+      req.path === '/' || 
+      req.path === '/health' || 
+      req.path === '/api/info' || 
+      req.path === '/dashboard-simple' ||
+      req.path === '/maps' ||
+      req.path.startsWith('/maps/')) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`📝 Allowing request to: ${req.path}`);
+    }
     return next();
   }
-  console.log(`🔐 Checking API key for: ${req.path}`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`🔐 Checking API key for: ${req.path}`);
+  }
   return apiKeyAuth(req, res, next);
 });
 
@@ -461,7 +473,7 @@ app.get('/maps/:id', async (req, res) => {
 });
 
 // Create new map
-app.post('/maps', async (req, res) => {
+app.post('/maps', requireAdmin, async (req, res) => {
   try {
     const newMap = await insertMap(req.body);
     res.status(201).json({ ok: true, data: newMap });
@@ -471,7 +483,7 @@ app.post('/maps', async (req, res) => {
 });
 
 // Update map
-app.put('/maps/:id', async (req, res) => {
+app.put('/maps/:id', requireAdmin, async (req, res) => {
   try {
     const updated = await updateMap(req.params.id, req.body);
     if (!updated) return res.status(404).json({ ok: false, error: 'Map not found' });
@@ -482,7 +494,7 @@ app.put('/maps/:id', async (req, res) => {
 });
 
 // Delete map
-app.delete('/maps/:id', async (req, res) => {
+app.delete('/maps/:id', requireAdmin, async (req, res) => {
   try {
     const deleted = await deleteMap(req.params.id);
     if (!deleted) return res.status(404).json({ ok: false, error: 'Map not found' });
