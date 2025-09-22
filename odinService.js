@@ -63,8 +63,6 @@ function generateOdinTokenStandard(params) {
         console.log(`🎙️ Odin token generated for user ${userId.trim()} in room ${roomName.trim()}`);
     }
     
-    return token;
-    
     return {
       token: token,
       room_name: roomName.trim(),

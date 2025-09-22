@@ -509,7 +509,6 @@ app.delete('/maps/:id', requireAdmin, async (req, res) => {
 // Endpoint para cerrar un online_map por address y port
 app.put('/online-maps/close', async (req, res) => {
   try {
-    // console.log(`Closing online_map at address: ${req.connection.remoteAddress}, port: ${req.body.port}`);
     // Validar que req.body existe y tiene el campo port
     if (!req.body || !req.body.port) {
       return res.status(400).json({ 
@@ -518,9 +517,14 @@ app.put('/online-maps/close', async (req, res) => {
       });
     }
     
-    const { port } = req.body;
+    const { port, address } = req.body;
     
-    const data = await closeOnlineMapByAddressPort(req.connection.remoteAddress, port);
+    // Si no se proporciona address, usar la IP del cliente
+    const targetAddress = address || req.connection.remoteAddress;
+    
+    // console.log(`Closing online_map at address: ${targetAddress}, port: ${port}`);
+    
+    const data = await closeOnlineMapByAddressPort(targetAddress, port);
     res.json({ ok: true, data });
   } catch (err) {
     res.status(400).json({ ok: false, error: err.message });
