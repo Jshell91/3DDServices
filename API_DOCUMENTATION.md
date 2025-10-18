@@ -31,9 +31,50 @@ GET /admin/api/maps
 Authorization: Admin Session Required
 ```
 
-**Response:**
-```json
+### Get Visible Maps (requires API key)
+```http
+GET /maps
+x-api-key: [API_KEY]
+```
+
+### Get Map by Id (requires API key)
+```http
+GET /maps/:id
+x-api-key: [API_KEY]
+```
+
+ GET `/maps/code/:code/exists` – Check if a map with the given CODE MAP (codemap) exists
 {
+  Request:
+  - Path params: `code` (string) – the map code to check (case-insensitive) (requires `x-api-key`)
+  - Header: `x-api-key: [API_KEY]`
+
+  Response 200 OK:
+  {
+    "ok": true,
+    "code": "ABC123",
+    "exists": true,
+    "data": {
+      "id": 42,
+      "name": "My Map",
+      "codemap": "ABC123",
+      "name_in_game": "MyMapInternal",
+      "visible_map_select": true,
+      "is_online": false,
+      "max_players": 16,
+      "is_single_player": false,
+      "is_multiplayer": true
+    }
+  }
+
+  Response 200 OK (not found):
+  {
+    "ok": true,
+    "code": "does-not-exist",
+    "exists": false,
+    "data": null
+  }
+
   "ok": true,
   "data": [
     {

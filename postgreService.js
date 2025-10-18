@@ -185,6 +185,8 @@ module.exports = {
   getAllMaps,
   getAllMapsAdmin,
   getMapById,
+  getMapByCode,
+  mapExistsByCode,
   insertMap,
   updateMap,
   deleteMap,
@@ -308,6 +310,26 @@ async function getMapById(id) {
   if (!id) throw new Error('id is required');
   const result = await pool.query('SELECT * FROM maps WHERE id = $1', [id]);
   return result.rows[0];
+}
+
+// Get map by codemap (case-insensitive)
+async function getMapByCode(code) {
+  if (!code) throw new Error('code is required');
+  const result = await pool.query(
+    `SELECT *
+     FROM maps
+     WHERE codemap IS NOT NULL AND codemap <> ''
+       AND LOWER(codemap) = LOWER($1)
+     LIMIT 1`,
+    [String(code).trim()]
+  );
+  return result.rows[0];
+}
+
+// Check existence of a map by codemap
+async function mapExistsByCode(code) {
+  const map = await getMapByCode(code);
+  return !!map;
 }
 
 // Insert a new map

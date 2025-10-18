@@ -8,6 +8,17 @@
 # ./VR3DDSOCIALWORLDServer.exe ART_EXHIBITIONS_4Deya -port=8084 -log
 # ./VR3DDSOCIALWORLDServer.exe ART_EXHIBITIONS_SHEisAI -port=8085 -log
 
+# ./VR3DDSOCIALWORLDServer.sh 01_MAINWORLD -port=8080 -log
+# ./VR3DDSOCIALWORLDServer.sh ART_EXHIBITIONSARTLOBBY -port=8081 -log
+# ./VR3DDSOCIALWORLDServer.sh ART_EXHIBITIONS_AIArtists -port=8082 -log
+# ./VR3DDSOCIALWORLDServer.sh ART_EXHIBITIONS_STRANGEWORLDS_ -port=8083 -log
+# ./VR3DDSOCIALWORLDServer.sh ART_EXHIBITIONS_4Deya -port=8084 -log
+# ./VR3DDSOCIALWORLDServer.sh ART_EXHIBITIONS_SHEisAI -port=8085 -log
+# ./VR3DDSOCIALWORLDServer.sh ART_Halloween2025_MULTIPLAYER -port=8086 -log
+# ./VR3DDSOCIALWORLDServer.sh ART_JULIENVALLETakaBYJULES -port=8087 -log
+# ./VR3DDSOCIALWORLDServer.sh SKYNOVAbyNOVA -port=8090 -log
+# ./VR3DDSOCIALWORLDServer.sh MALL_DOWNTOWNCITYMALL -port=8091 -log
+
 # ===============================================
 # AUTOMATIC STARTUP SCRIPT (10 seconds delay between each server)
 # ===============================================

@@ -10,3 +10,8 @@
 8. Monitoring and alerts (Prometheus, Grafana, cloud services).
 9. Advanced security audit and access control.
 10. Containerized deployment (Docker, Kubernetes, cloud).
+
+11. Build output housekeeping (ideas, not yet implemented):
+	- Add `-Clean` switch to remove previous outputs (WindowsClient/WindowsServer/LinuxServer) before a new build.
+	- Add `-PurgeOlderThan <days>` or `-KeepLast <N>` to automatically prune old builds and save disk space.
+	- Optional archive rotation strategy with size cap for `ArchiveDir`.

@@ -14,7 +14,7 @@ const session = require('express-session');
 const {
   insertPlayFabPlayerInLevel, testDbConnection, getAllPlayerInLevel, insertPlayerInLevel, countPlayersByLevel,
   insertArtworkLike, countLikesByArtwork, getLikesByArtworkId, hasUserLikedArtwork,
-  getAllMaps, getAllMapsAdmin, getMapById, insertMap, updateMap, deleteMap,
+  getAllMaps, getAllMapsAdmin, getMapById, getMapByCode, mapExistsByCode, insertMap, updateMap, deleteMap,
   getAllOnlineMaps, getOnlineMapById, insertOnlineMap, updateOnlineMap, deleteOnlineMap, closeOnlineMapByAddressPort,
   getOpenOnlineMapsByName
 } = require('./postgreService');
@@ -330,22 +330,25 @@ app.get('/admin/api/stats', requireAdmin, async (req, res) => {
 
 // Apply API key middleware to all routes EXCEPT dashboard static files and specific routes
 app.use((req, res, next) => {
-  // Skip API key for dashboard static files, admin routes, and protected admin endpoints
-  if (req.path.startsWith('/dashboard') || 
-      req.path.startsWith('/admin') || 
-      req.path === '/' || 
-      req.path === '/health' || 
-      req.path === '/api/info' || 
-      req.path === '/dashboard-simple' ||
-      req.path === '/maps' ||
-      req.path.startsWith('/maps/')) {
+  // Public, no API key required
+  const isPublic = (
+    req.path.startsWith('/dashboard') ||
+    req.path.startsWith('/admin') || // Admin UI/API uses session-based auth
+    req.path === '/' ||
+    req.path === '/health' ||
+    req.path === '/api/info' ||
+    req.path === '/dashboard-simple'
+  );
+
+  if (isPublic) {
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`📝 Allowing request to: ${req.path}`);
+      console.log(`📝 Allowing request to (public): ${req.method} ${req.path}`);
     }
     return next();
   }
+
   if (process.env.NODE_ENV !== 'production') {
-    console.log(`🔐 Checking API key for: ${req.path}`);
+    console.log(`🔐 Checking API key for: ${req.method} ${req.path}`);
   }
   return apiKeyAuth(req, res, next);
 });
@@ -458,6 +461,34 @@ app.get('/maps', async (req, res) => {
     res.json({ ok: true, data });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// Check if a map exists by CODE MAP (codemap)
+// Requires x-api-key header
+// Example: GET /maps/code/ABC123/exists -> { ok: true, exists: true, code: "ABC123" }
+app.get('/maps/code/:code/exists', apiKeyAuth, async (req, res) => {
+  try {
+    const code = (req.params.code || '').trim();
+    if (!code) {
+      return res.status(400).json({ ok: false, error: 'Missing code parameter' });
+    }
+    const exists = await mapExistsByCode(code);
+    // Optional: include minimal map info if it exists (non-sensitive fields only)
+    let data = null;
+    if (exists) {
+      const map = await getMapByCode(code);
+      if (map) {
+        const { id, name, codemap, name_in_game, visible_map_select, is_online, max_players, is_single_player } = map;
+        const maxPlayersNum = parseInt(max_players, 10) || 0;
+        const isSingle = Boolean(is_single_player);
+        const isMultiplayer = (!isSingle && maxPlayersNum > 1) || Boolean(is_online);
+        data = { id, name, codemap, name_in_game, visible_map_select, is_online, max_players: maxPlayersNum, is_single_player: isSingle, is_multiplayer: isMultiplayer };
+      }
+    }
+    return res.json({ ok: true, code, exists, data });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
   }
 });
 
