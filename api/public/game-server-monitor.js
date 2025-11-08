@@ -9,6 +9,7 @@ class GameServerMonitor {
         this.updateInterval = null;
         this.retryCount = 0;
         this.maxRetries = 3;
+        this.isVisible = false;
     }
 
     async initialize() {
@@ -249,34 +250,32 @@ class GameServerMonitor {
     }
 
     getOrCreateContainer() {
+        // Use the existing container in the dashboard tab
         let container = document.getElementById('game-server-monitor');
         
         if (!container) {
+            // Fallback: create container if not found
             container = document.createElement('div');
             container.id = 'game-server-monitor';
             container.className = 'dashboard-section';
-            
-            // Insert after maps section if it exists
-            const mapsSection = document.querySelector('.maps-section');
-            if (mapsSection) {
-                mapsSection.parentNode.insertBefore(container, mapsSection.nextSibling);
-            } else {
-                // Otherwise append to dashboard content
-                const dashboardContent = document.querySelector('.dashboard-content') || 
-                                      document.querySelector('main') || 
-                                      document.body;
-                dashboardContent.appendChild(container);
-            }
+            document.body.appendChild(container);
         }
         
         return container;
     }
 
     startAutoRefresh() {
-        // Refresh every 30 seconds
+        // Refresh every 30 seconds, but only if the tab is visible
         this.updateInterval = setInterval(() => {
-            this.loadServerData();
+            if (this.isTabVisible()) {
+                this.loadServerData();
+            }
         }, 30000);
+    }
+
+    isTabVisible() {
+        const gameServersTab = document.getElementById('game-servers');
+        return gameServersTab && gameServersTab.classList.contains('active');
     }
 
     stopAutoRefresh() {
@@ -665,13 +664,31 @@ if (!document.getElementById('game-monitor-styles')) {
 let gameMonitor;
 
 // Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
+function initializeGameMonitor() {
+    if (!gameMonitor) {
         gameMonitor = new GameServerMonitor();
         gameMonitor.initialize();
-    });
+        
+        // Add tab activation listener
+        const tabButtons = document.querySelectorAll('.tab-button');
+        tabButtons.forEach(button => {
+            if (button.getAttribute('data-tab') === 'game-servers') {
+                button.addEventListener('click', () => {
+                    // Load data when tab becomes active
+                    setTimeout(() => {
+                        if (gameMonitor && gameMonitor.isConnected) {
+                            gameMonitor.loadServerData();
+                        }
+                    }, 100);
+                });
+            }
+        });
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeGameMonitor);
 } else {
     // DOM already loaded
-    gameMonitor = new GameServerMonitor();
-    gameMonitor.initialize();
+    initializeGameMonitor();
 }

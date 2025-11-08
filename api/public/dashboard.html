@@ -42,6 +42,7 @@
                 <button class="tab-button" data-tab="maps">Maps</button>
                 <button class="tab-button" data-tab="online-maps">Online Maps</button>
                 <button class="tab-button" data-tab="open-maps">Open Maps</button>
+                <button class="tab-button" data-tab="game-servers">🎮 Game Servers</button>
             </div>
 
             <!-- Content Sections -->
@@ -159,6 +160,13 @@
                                 <!-- Data loaded via JS -->
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- Game Servers Tab -->
+                <div id="game-servers" class="tab-panel">
+                    <div id="game-server-monitor">
+                        <!-- Game Server Monitor content will be injected here -->
                     </div>
                 </div>
             </div>
@@ -367,5 +375,6 @@
     <!-- Load SortableJS from CDN -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script src="dashboard.js"></script>
+    <script src="game-server-monitor.js"></script>
 </body>
 </html>
