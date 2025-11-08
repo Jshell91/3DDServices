@@ -103,6 +103,39 @@ class GameServerMonitor {
                     </div>
                 </div>
 
+                <div class="system-metrics-panel">
+                    <div class="system-metrics-header">
+                        <span>🖥️ Ubuntu Server Metrics</span>
+                        <small id="system-uptime">-</small>
+                    </div>
+                    <div class="system-metrics-grid">
+                        <div class="system-metric-card">
+                            <div class="system-metric-value" id="system-cpu">-</div>
+                            <div class="system-metric-label">CPU Usage</div>
+                            <div class="system-metric-bar">
+                                <div class="system-metric-fill cpu" id="system-cpu-bar"></div>
+                            </div>
+                            <div class="system-metric-details" id="system-load">Load: -</div>
+                        </div>
+                        <div class="system-metric-card">
+                            <div class="system-metric-value" id="system-memory">-</div>
+                            <div class="system-metric-label">Memory Usage</div>
+                            <div class="system-metric-bar">
+                                <div class="system-metric-fill memory" id="system-memory-bar"></div>
+                            </div>
+                            <div class="system-metric-details" id="system-memory-details">- / -</div>
+                        </div>
+                        <div class="system-metric-card">
+                            <div class="system-metric-value" id="system-disk">-</div>
+                            <div class="system-metric-label">Disk Usage</div>
+                            <div class="system-metric-bar">
+                                <div class="system-metric-fill disk" id="system-disk-bar"></div>
+                            </div>
+                            <div class="system-metric-details">Root filesystem</div>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="server-alerts" class="server-alerts"></div>
 
                 <div class="servers-grid" id="servers-grid">
@@ -130,10 +163,16 @@ class GameServerMonitor {
                     </div>
                 </div>
                 
-                <div class="offline-message">
-                    <p>⚠️ Game Server Monitor service is not available</p>
-                    <p>Server status monitoring is currently offline.</p>
-                    <button onclick="gameMonitor.reconnect()" class="btn">🔄 Try Reconnect</button>
+                <div class="system-metrics-panel">
+                    <div class="system-metrics-header">
+                        <span>🖥️ Ubuntu Server Metrics</span>
+                        <small>Unavailable</small>
+                    </div>
+                    <div class="offline-message">
+                        <p>⚠️ Game Server Monitor service is not available</p>
+                        <p>Server status and system monitoring is currently offline.</p>
+                        <button onclick="gameMonitor.reconnect()" class="btn">🔄 Try Reconnect</button>
+                    </div>
                 </div>
             </div>
         `;
@@ -146,6 +185,9 @@ class GameServerMonitor {
         document.getElementById('stopped-servers').textContent = data.summary.stopped;
         document.getElementById('healthy-servers').textContent = data.summary.healthy;
 
+        // Update system metrics
+        this.updateSystemMetrics(data.systemMetrics);
+
         // Update alerts
         this.updateAlerts(data.alerts);
 
@@ -155,6 +197,31 @@ class GameServerMonitor {
         // Update timestamp
         const lastUpdate = new Date(data.lastUpdate);
         document.getElementById('last-update').textContent = lastUpdate.toLocaleTimeString();
+    }
+
+    updateSystemMetrics(systemMetrics) {
+        if (!systemMetrics) return;
+
+        // CPU
+        document.getElementById('system-cpu').textContent = `${systemMetrics.cpu.toFixed(1)}%`;
+        document.getElementById('system-cpu-bar').style.width = `${Math.min(systemMetrics.cpu, 100)}%`;
+        document.getElementById('system-load').textContent = `Load: ${systemMetrics.loadAverage.toFixed(2)}`;
+
+        // Memory
+        const memPercent = systemMetrics.memory.percent;
+        const memUsed = (systemMetrics.memory.usedMB / 1024).toFixed(1);
+        const memTotal = (systemMetrics.memory.totalMB / 1024).toFixed(1);
+        
+        document.getElementById('system-memory').textContent = `${memPercent.toFixed(1)}%`;
+        document.getElementById('system-memory-bar').style.width = `${Math.min(memPercent, 100)}%`;
+        document.getElementById('system-memory-details').textContent = `${memUsed}GB / ${memTotal}GB`;
+
+        // Disk
+        document.getElementById('system-disk').textContent = `${systemMetrics.disk}%`;
+        document.getElementById('system-disk-bar').style.width = `${Math.min(systemMetrics.disk, 100)}%`;
+
+        // Uptime
+        document.getElementById('system-uptime').textContent = systemMetrics.uptime;
     }
 
     updateAlerts(alerts) {
@@ -401,6 +468,83 @@ const monitorCSS = `
         grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
         gap: 15px;
         margin-bottom: 20px;
+    }
+
+    .system-metrics-panel {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .system-metrics-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 15px;
+        font-weight: bold;
+        color: #495057;
+    }
+
+    .system-metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 15px;
+    }
+
+    .system-metric-card {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        padding: 12px;
+        text-align: center;
+    }
+
+    .system-metric-value {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 4px;
+    }
+
+    .system-metric-label {
+        font-size: 0.85em;
+        color: #6c757d;
+        margin-bottom: 8px;
+    }
+
+    .system-metric-bar {
+        width: 100%;
+        height: 6px;
+        background: #e9ecef;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-top: 8px;
+    }
+
+    .system-metric-fill {
+        height: 100%;
+        transition: all 0.3s ease;
+        border-radius: 3px;
+    }
+
+    .system-metric-fill.cpu {
+        background: linear-gradient(90deg, #28a745 0%, #ffc107 70%, #dc3545 90%);
+    }
+
+    .system-metric-fill.memory {
+        background: linear-gradient(90deg, #17a2b8 0%, #ffc107 70%, #dc3545 85%);
+    }
+
+    .system-metric-fill.disk {
+        background: linear-gradient(90deg, #6f42c1 0%, #ffc107 80%, #dc3545 95%);
+    }
+
+    .system-metric-details {
+        font-size: 0.75em;
+        color: #6c757d;
+        margin-top: 4px;
     }
 
     .summary-card {

@@ -19,7 +19,7 @@ const SERVER_CONFIG = {
         8081: { name: 'ART_EXHIBITIONSARTLOBBY', type: 'exhibition' },
         8082: { name: 'ART_EXHIBITIONS_AIArtists', type: 'exhibition' },
         8083: { name: 'ART_EXHIBITIONS_STRANGEWORLDS_', type: 'exhibition' },
-        8085: { name: 'ART_EXHIBITIONS_SHEisAI', type: 'exhibition' },
+        //8085: { name: 'ART_EXHIBITIONS_SHEisAI', type: 'exhibition' },
         8086: { name: 'ART_Halloween2025_MULTIPLAYER', type: 'seasonal' },
         8087: { name: 'ART_JULIENVALLETakaBYJULES', type: 'artist' },
         8090: { name: 'SKYNOVAbyNOVA', type: 'artist' },
@@ -28,6 +28,11 @@ const SERVER_CONFIG = {
     logDir: './logs',
     checkInterval: 30000 // 30 segundos
 };
+
+// Cache para métricas del sistema
+let systemMetricsCache = null;
+let systemMetricsLastCheck = 0;
+const SYSTEM_METRICS_CACHE_DURATION = 15000; // 15 segundos
 
 app.use(cors());
 app.use(express.json());
@@ -73,16 +78,23 @@ async function getSystemResources(pid) {
     return new Promise((resolve) => {
         exec(`ps -p ${pid} -o pid,pcpu,pmem,vsz,rss,etime --no-headers 2>/dev/null`, (error, stdout) => {
             if (error || !stdout.trim()) {
+                console.log(`❌ PS Error for PID ${pid}:`, error?.message || 'No output');
                 resolve(null);
             } else {
                 const parts = stdout.trim().split(/\s+/);
-                resolve({
+                console.log(`📊 PS Output for PID ${pid}:`, stdout.trim());
+                console.log(`📊 Parsed parts:`, parts);
+                
+                const resources = {
                     cpu: parseFloat(parts[1]) || 0,
                     memory: parseFloat(parts[2]) || 0,
                     vszKB: parseInt(parts[3]) || 0,
                     rssKB: parseInt(parts[4]) || 0,
                     uptime: parts[5] || '0:00'
-                });
+                };
+                
+                console.log(`📊 Final resources for PID ${pid}:`, resources);
+                resolve(resources);
             }
         });
     });
@@ -103,6 +115,85 @@ async function getRecentLogs(port, lines = 10) {
         });
     } catch (error) {
         return [];
+    }
+}
+
+async function getSystemMetrics() {
+    const now = Date.now();
+    
+    // Usar cache si es reciente
+    if (systemMetricsCache && (now - systemMetricsLastCheck) < SYSTEM_METRICS_CACHE_DURATION) {
+        return systemMetricsCache;
+    }
+
+    try {
+        const [cpuInfo, memoryInfo, diskInfo, loadInfo, uptimeInfo] = await Promise.all([
+            // CPU usage promedio del último minuto
+            new Promise((resolve) => {
+                exec(`top -bn1 | grep "Cpu(s)" | awk '{print $2}' | awk -F'%' '{print $1}'`, (error, stdout) => {
+                    resolve(error ? 0 : parseFloat(stdout.trim()) || 0);
+                });
+            }),
+            
+            // Información de memoria
+            new Promise((resolve) => {
+                exec(`free -m | awk 'NR==2{printf "%.1f %.1f %.1f", $3*100/$2, $3, $2}'`, (error, stdout) => {
+                    if (error) resolve({ percent: 0, used: 0, total: 0 });
+                    const parts = stdout.trim().split(' ');
+                    resolve({
+                        percent: parseFloat(parts[0]) || 0,
+                        usedMB: parseFloat(parts[1]) || 0,
+                        totalMB: parseFloat(parts[2]) || 0
+                    });
+                });
+            }),
+            
+            // Uso de disco del sistema
+            new Promise((resolve) => {
+                exec(`df -h / | awk 'NR==2 {print $5}' | sed 's/%//'`, (error, stdout) => {
+                    resolve(error ? 0 : parseFloat(stdout.trim()) || 0);
+                });
+            }),
+            
+            // Load average
+            new Promise((resolve) => {
+                exec(`uptime | awk -F'load average:' '{print $2}' | awk '{print $1}' | sed 's/,//'`, (error, stdout) => {
+                    resolve(error ? 0 : parseFloat(stdout.trim()) || 0);
+                });
+            }),
+            
+            // Uptime del sistema
+            new Promise((resolve) => {
+                exec(`uptime -p`, (error, stdout) => {
+                    resolve(error ? 'unknown' : stdout.trim());
+                });
+            })
+        ]);
+
+        systemMetricsCache = {
+            cpu: cpuInfo,
+            memory: memoryInfo,
+            disk: diskInfo,
+            loadAverage: loadInfo,
+            uptime: uptimeInfo,
+            timestamp: new Date().toISOString()
+        };
+        
+        systemMetricsLastCheck = now;
+        console.log(`🖥️ System Metrics:`, systemMetricsCache);
+        
+        return systemMetricsCache;
+        
+    } catch (error) {
+        console.error('Error getting system metrics:', error);
+        return {
+            cpu: 0,
+            memory: { percent: 0, usedMB: 0, totalMB: 0 },
+            disk: 0,
+            loadAverage: 0,
+            uptime: 'unknown',
+            timestamp: new Date().toISOString()
+        };
     }
 }
 
@@ -137,15 +228,16 @@ async function checkAllServers() {
     if (cachedStatus && (now - lastCheck) < CACHE_DURATION) {
         return cachedStatus;
     }
-    
+
     const servers = {};
     const summary = { total: 0, running: 0, stopped: 0, healthy: 0, warning: 0, critical: 0 };
     
+    // Obtener métricas del sistema
+    const systemMetrics = await getSystemMetrics();
+    
     for (const [port, config] of Object.entries(SERVER_CONFIG.servers)) {
         const portNum = parseInt(port);
-        summary.total++;
-        
-        try {
+        summary.total++;        try {
             const [isRunning, process, logs] = await Promise.all([
                 checkPortStatus(portNum),
                 getProcessInfo(portNum),
@@ -201,7 +293,12 @@ async function checkAllServers() {
         }
     }
     
-    cachedStatus = { servers, summary, lastUpdate: new Date().toISOString() };
+    cachedStatus = { 
+        servers, 
+        summary, 
+        systemMetrics,
+        lastUpdate: new Date().toISOString() 
+    };
     lastCheck = now;
     
     return cachedStatus;
@@ -311,6 +408,24 @@ app.get('/servers/:port/logs', async (req, res) => {
     }
 });
 
+// Endpoint para métricas del sistema
+app.get('/system/metrics', async (req, res) => {
+    try {
+        const metrics = await getSystemMetrics();
+        res.json({
+            ok: true,
+            system: metrics
+        });
+    } catch (error) {
+        console.error('Error getting system metrics:', error);
+        res.status(500).json({ 
+            ok: false, 
+            error: 'Failed to get system metrics',
+            details: error.message 
+        });
+    }
+});
+
 // Resumen para dashboard
 app.get('/dashboard/summary', async (req, res) => {
     try {
@@ -331,6 +446,7 @@ app.get('/dashboard/summary', async (req, res) => {
                 uptime: server.resources?.uptime || '0:00'
             })),
             alerts: generateAlerts(status.servers),
+            systemMetrics: status.systemMetrics,
             lastUpdate: status.lastUpdate
         };
         
@@ -439,6 +555,7 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`   GET  /servers/status            - All servers status`);
     console.log(`   GET  /servers/:port/health      - Specific server health`);
     console.log(`   GET  /servers/:port/logs        - Server logs (read-only)`);
+    console.log(`   GET  /system/metrics            - System-wide metrics (CPU, RAM, Disk)`);
     console.log(`   GET  /dashboard/summary         - Dashboard optimized data`);
     console.log(``);
     console.log(`⏱️  Cache duration: ${CACHE_DURATION/1000}s`);
