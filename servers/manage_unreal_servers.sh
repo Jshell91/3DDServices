@@ -51,7 +51,7 @@
 # CONFIGURACIÓN
 # ========================
 UNREAL_SERVER_PATH="./YourUnrealServer"  # 🔧 CAMBIAR por la ruta de tu ejecutable
-BASE_PORT=7777
+BASE_PORT=8080
 LOG_DIR="./logs"
 
 # Crear directorio de logs si no existe
@@ -98,9 +98,9 @@ show_help() {
     echo "  help            - Mostrar esta ayuda"
     echo ""
     echo "💡 Ejemplos:"
-    echo "  $0 start 5      - Iniciar 5 servidores (puertos 7777-7781)"
-    echo "  $0 logs 7777    - Ver logs del servidor en puerto 7777"
-    echo "  $0 connect 7778 - Conectar a la sesión del servidor puerto 7778"
+    echo "  $0 start 5      - Iniciar 5 servidores (puertos 8080-8084)"
+    echo "  $0 logs 8080    - Ver logs del servidor en puerto 8080"
+    echo "  $0 connect 8081 - Conectar a la sesión del servidor puerto 8081"
     echo "  $0 deploy --yes - Subir './LinuxServer' al servidor sin confirmar"
     echo "  $0 status       - Ver todos los servidores corriendo"
     echo ""
@@ -441,26 +441,26 @@ remote_wait_ports_listening() {
         local interval="${3:-$HEALTH_INTERVAL}"
 
         echo "🩺 (remoto) Esperando puertos activos (base $REMOTE_BASE_PORT, cantidad $num_servers, timeout ${timeout}s)"
+        local max_port=$((REMOTE_BASE_PORT + num_servers - 1))
         ssh -p "$DEPLOY_SSH_PORT" "$DEPLOY_USER@$DEPLOY_HOST" "\
             check_port() { \
                 local p=\"\$1\"; \
                 if command -v ss >/dev/null 2>&1; then \
-                    ss -lntu 2>/dev/null | awk '{print \$5}' | grep -q ":\$p" && return 0; \
+                    ss -lntu 2>/dev/null | awk '{print \$5}' | grep -q \":\$p\" && return 0; \
                 elif command -v netstat >/dev/null 2>&1; then \
-                    netstat -lntu 2>/dev/null | awk '{print \$4}' | grep -q ":\$p" && return 0; \
+                    netstat -lntu 2>/dev/null | awk '{print \$4}' | grep -q \":\$p\" && return 0; \
                 fi; \
                 return 1; \
             }; \
             waited=0; \
             while true; do \
                 ok=0; \
-                for i in $(seq 0 $((num_servers-1))); do \
-                    port=$(( $REMOTE_BASE_PORT + i )); \
-                    if check_port \"\$port\"; then ok=$((ok+1)); fi; \
+                for port in \$(seq $REMOTE_BASE_PORT $max_port); do \
+                    if check_port \"\$port\"; then ok=\$((ok+1)); fi; \
                 done; \
-                if [ \"\$ok\" -eq \"$num_servers\" ]; then echo \"✅ (remoto) Puertos activos: \$ok/\"$num_servers\"\"; exit 0; fi; \
-                if [ \"\$waited\" -ge \"$timeout\" ]; then echo \"⚠️  (remoto) Timeout: activos \$ok/\"$num_servers\"\"; exit 1; fi; \
-                sleep $interval; waited=$((waited+$interval)); \
+                if [ \"\$ok\" -eq \"$num_servers\" ]; then echo \"✅ (remoto) Puertos activos: \$ok/$num_servers\"; exit 0; fi; \
+                if [ \"\$waited\" -ge \"$timeout\" ]; then echo \"⚠️  (remoto) Timeout: activos \$ok/$num_servers\"; exit 1; fi; \
+                sleep $interval; waited=\$((waited+$interval)); \
             done"
         return $?
 }
