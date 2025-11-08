@@ -9,7 +9,7 @@ async function runMigration() {
     console.log('🔌 Conectando a la base de datos...');
     
     // Leer el archivo SQL
-    const sqlPath = path.join(__dirname, 'sql', 'add_display_order_column.sql');
+    const sqlPath = path.join(__dirname, '..', 'sql', 'add_display_order_column.sql');
     const sqlContent = fs.readFileSync(sqlPath, 'utf8');
     
     console.log('📄 Ejecutando migración...');
