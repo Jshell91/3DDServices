@@ -332,12 +332,12 @@ class GameServerMonitor {
     }
 
     startAutoRefresh() {
-        // Refresh every 30 seconds, but only if the tab is visible
+        // Refresh every 5 minutes, but only if the tab is visible
         this.updateInterval = setInterval(() => {
             if (this.isTabVisible()) {
                 this.loadServerData();
             }
-        }, 30000);
+        }, 300000);
     }
 
     isTabVisible() {

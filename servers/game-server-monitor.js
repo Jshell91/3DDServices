@@ -32,7 +32,7 @@ const SERVER_CONFIG = {
 // Cache para métricas del sistema
 let systemMetricsCache = null;
 let systemMetricsLastCheck = 0;
-const SYSTEM_METRICS_CACHE_DURATION = 15000; // 15 segundos
+const SYSTEM_METRICS_CACHE_DURATION = 300000; // 300 segundos (5 minutos)
 
 app.use(cors());
 app.use(express.json());
@@ -40,7 +40,7 @@ app.use(express.json());
 // Cache para evitar checks muy frecuentes
 let cachedStatus = null;
 let lastCheck = 0;
-const CACHE_DURATION = 10000; // 10 segundos
+const CACHE_DURATION = 300000; // 300 segundos (5 minutos)
 
 // ================================
 // MONITORING FUNCTIONS
