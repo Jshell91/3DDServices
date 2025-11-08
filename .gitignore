@@ -38,3 +38,5 @@ api/package-standalone.json
 # Archivos temporales de desarrollo
 *.tmp
 *.temp
+OutBuild/
+test-build-output/
