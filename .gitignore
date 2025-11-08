@@ -1,20 +1,23 @@
 # Node.js
 node_modules/
+api/node_modules/
 .env
+api/.env
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 dist/
-build/
-.DS_Store
 *.log
 coverage/
 .vscode/
 .idea/
 *.tgz
 
-# Optional:
-logs/
+# Runtime logs (pero mantener la estructura de directorios)
+logs/*.log
+logs/**/*.log
+
+# Process files
 pids/
 *.pid
 *.seed
@@ -22,22 +25,16 @@ pids/
 
 # OS
 Thumbs.db
-API_VERSION.md
+.DS_Store
 
+# PM2 runtime files
+PM2
+*.pm2
 
-# Ignorar carpetas de tests y SQL
-/test/
-/sql/
+# Archivos standalone (backup/alternativos)
+api/server-standalone.js
+api/package-standalone.json
 
-# Archivos de prueba
-/test_artwork_likes.http
-/test_artwork_likes.ps1
-
-# Archivo de comandos útiles
-/PM2_COMMANDS.md
-
-# Archivo de guía de despliegue
-/DEPLOY.md
-server-standalone.js
-package-standalone.json
-docs/SSH_NOTES.md
+# Archivos temporales de desarrollo
+*.tmp
+*.temp

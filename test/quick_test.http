@@ -1,0 +1,17 @@
+### Quick Test - Display Order API
+### Test simple para verificar el ordenamiento
+
+### 1. Test endpoint público (requiere API key)
+# GET {{host}}/maps
+# Content-Type: application/json
+# X-API-Key: tu_api_key_aqui
+
+### 2. Test endpoint de salud (no requiere auth)
+GET http://localhost:3000/health
+
+### 3. Test endpoint de info (no requiere auth)  
+GET http://localhost:3000/api/info
+
+### 4. Si tienes acceso admin, test directo a base de datos
+# Ejecuta en PostgreSQL:
+# SELECT id, name, display_order FROM maps ORDER BY display_order ASC LIMIT 10;

@@ -428,7 +428,7 @@ remote_start_servers() {
           log='$DEPLOY_PATH/logs/server-'"$port"'.log'; \
           if screen -ls 2>/dev/null | grep -q "${session}"; then echo "⚠️  Ya existe ${session}, saltando"; else \
             echo "📡 Lanzando ${session} en puerto ${port}"; \
-            screen -dmS "$session" bash -c "echo '🚀 Unreal port $port'; echo '📅 ' \$(date); echo '================================'; '$REMOTE_UNREAL_SERVER_PATH' -Port=$port 2>&1 | tee -a '$log'; exec bash"; \
+            screen -dmS \"\$session\" bash -c \"echo '🚀 Unreal port \$port'; echo '📅 '\\\$(date); echo '================================'; '\$REMOTE_UNREAL_SERVER_PATH' -Port=\$port 2>&1 | tee -a '\$log'; exec bash\"; \
             sleep 1; \
           fi; \
         done"

@@ -1,0 +1,14 @@
+### Check existing map code (replace ABC123 with a real codemap)
+GET http://localhost:3000/maps/code/ABC123/exists
+Accept: application/json
+x-api-key: {{$dotenv API_KEY}}
+
+### Check non-existing map code
+GET http://localhost:3000/maps/code/does-not-exist-xyz/exists
+Accept: application/json
+x-api-key: {{$dotenv API_KEY}}
+
+### Check provided code map 3DDSWAIART
+GET http://localhost:3000/maps/code/3DDSWAIART/exists
+Accept: application/json
+x-api-key: {{$dotenv API_KEY}}

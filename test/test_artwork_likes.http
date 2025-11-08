@@ -1,0 +1,215 @@
+### Prueba: Insertar un like nuevo
+POST http://localhost:3000/artwork/like
+Content-Type: application/json
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+{
+  "artwork_id": "obra_test_1",
+  "user_id": "usuario_test_1"
+}
+
+### Prueba: Insertar un like duplicado (debe fallar)
+POST http://localhost:3000/artwork/like
+Content-Type: application/json
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+{
+  "artwork_id": "obra_test_1",
+  "user_id": "usuario_test_1"
+}
+
+### Prueba: Insertar un like nuevo
+POST http://localhost:3000/artwork/like
+Content-Type: application/json
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+{
+  "artwork_id": "obra_test_1",
+  "user_id": "usuario_test_2"
+}
+
+### Prueba: Insertar un like nuevo en otra obra
+POST http://localhost:3000/artwork/like
+Content-Type: application/json
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+{
+  "artwork_id": "obra_test_2",
+  "user_id": "usuario_test_1"
+}
+
+### Prueba: Insertar un like nuevo en otra obra y usuario
+POST http://localhost:3000/artwork/like
+Content-Type: application/json
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+{
+  "artwork_id": "obra_test_2",
+  "user_id": "usuario_test_2"
+}
+
+### Prueba: Consultar likes de una obra
+GET http://localhost:3000/artwork/likes/obra_test_1
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+### Prueba: Consultar likes de obra_test_2
+GET http://localhost:3000/artwork/likes/obra_test_2
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+### Prueba: Consultar si usuario ha votado
+GET http://localhost:3000/artwork/has-liked/obra_test_1/usuario_test_1
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+### Prueba: Consultar si usuario_test_2 ha votado por obra_test_2
+GET http://localhost:3000/artwork/has-liked/obra_test_2/usuario_test_2
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+### Prueba: Consultar si usuario_test_3 ha votado por obra_test_2 (debe ser false)
+GET http://localhost:3000/artwork/has-liked/obra_test_2/usuario_test_3
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+### Prueba: Contar likes por obra
+GET http://localhost:3000/artwork/count-likes
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+### Prueba: Insertar un like nuevo
+POST http://localhost:3000/artwork/like
+Content-Type: application/json
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+{
+  "artwork_id": "obra_test_3",
+  "user_id": "usuario_test_1"
+}
+
+### Prueba: Insertar un like nuevo
+POST http://localhost:3000/artwork/like
+Content-Type: application/json
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+{
+  "artwork_id": "obra_test_3",
+  "user_id": "usuario_test_3"
+}
+
+### Prueba: Insertar un like nuevo
+POST http://localhost:3000/artwork/like
+Content-Type: application/json
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+{
+  "artwork_id": "obra_test_4",
+  "user_id": "usuario_test_2"
+}
+
+### Prueba: Insertar un like nuevo
+POST http://localhost:3000/artwork/like
+Content-Type: application/json
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+{
+  "artwork_id": "obra_test_4",
+  "user_id": "usuario_test_4"
+}
+
+### Prueba: Insertar un like nuevo
+POST http://localhost:3000/artwork/like
+Content-Type: application/json
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+{
+  "artwork_id": "obra_test_5",
+  "user_id": "usuario_test_5"
+}
+
+### Prueba: Insertar un like nuevo
+POST http://localhost:3000/artwork/like
+Content-Type: application/json
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+{
+  "artwork_id": "obra_test_5",
+  "user_id": "usuario_test_1"
+}
+
+### Prueba: Insertar un like nuevo
+POST http://localhost:3000/artwork/like
+Content-Type: application/json
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+{
+  "artwork_id": "obra_test_6",
+  "user_id": "usuario_test_6"
+}
+
+### Prueba: Insertar un like nuevo
+POST http://localhost:3000/artwork/like
+Content-Type: application/json
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+{
+  "artwork_id": "obra_test_6",
+  "user_id": "usuario_test_2"
+}
+
+### === INSERTAR VOTOS MASIVOS ===
+
+### Obra Popular: Voto 1
+POST http://localhost:3000/artwork/like
+Content-Type: application/json
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+{
+  "artwork_id": "obra_popular_1",
+  "user_id": "mass_voter_1"
+}
+
+### Obra Popular: Voto 2  
+POST http://localhost:3000/artwork/like
+Content-Type: application/json
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+{
+  "artwork_id": "obra_popular_1",
+  "user_id": "mass_voter_2"
+}
+
+### Obra Popular: Voto 3
+POST http://localhost:3000/artwork/like
+Content-Type: application/json
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+{
+  "artwork_id": "obra_popular_1",
+  "user_id": "mass_voter_3"
+}
+
+### Obra Popular: Voto 4
+POST http://localhost:3000/artwork/like
+Content-Type: application/json
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+{
+  "artwork_id": "obra_popular_1",
+  "user_id": "mass_voter_4"
+}
+
+### Obra Popular: Voto 5
+POST http://localhost:3000/artwork/like
+Content-Type: application/json
+x-api-key: 08b9bfdf65f54e49b0b286790786f263b18d3cefcda345b59f6295ee9a746ec2
+
+{
+  "artwork_id": "obra_popular_1",
+  "user_id": "mass_voter_5"
+}
+
+
+
+INSERT INTO artwork_likes (artwork_id, user_id) VALUES
+('AlwynVelasquez01', 'ShadowArtist_Pro'),
+('AlwynVelasquez01', 'CoolCat_Master'),
+('AlwynVelasquez01', 'VisualPoet_Pro'),
+('AlwynVelasquez01', 'NeonVibes_X99'),
+('DeannaLeonard04', 'UrbanLegend_2025'),
+('DeannaLeonard04', 'StudioLegend_FR');

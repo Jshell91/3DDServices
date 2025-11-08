@@ -1,0 +1,18 @@
+### Insertar mapa ART_EXHIBITIONS_4Deya
+POST http://localhost:3000/maps
+Content-Type: application/json
+x-api-key: YOUR_API_KEY_HERE
+
+{
+  "name": "ART_EXHIBITIONS_4Deya",
+  "map": "ART_EXHIBITIONS_4Deya",
+  "codemap": "",
+  "is_single_player": true,
+  "name_in_game": "4DEYA COMMUNITY CAMPUS",
+  "is_online": true,
+  "visible_map_select": true,
+  "views": "1000",
+  "sponsor": "4DEYA",
+  "image": "IMP_4DEYA_COMMUNITY_CAMPUS.jpg",
+  "max_players": 50
+}

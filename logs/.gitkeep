@@ -1,0 +1,3 @@
+# Logs directory
+# PM2 logs will be stored here
+*.log

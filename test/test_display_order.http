@@ -1,0 +1,125 @@
+### Test Display Order Functionality
+### Archivo de tests para validar la funcionalidad de display_order
+
+### Variables
+@host = localhost:3000
+@adminSession = # Necesitas login primero
+
+### 1. Test: Obtener todos los maps (público) - debe estar ordenado por display_order
+GET {{host}}/maps
+x-api-key: {{$dotenv API_KEY}}
+
+### 2. Test: Obtener maps de admin - debe incluir todos los maps ordenados
+GET {{host}}/admin/api/maps
+
+### 3. Test: Crear nuevo map con display_order específico
+POST {{host}}/maps
+Content-Type: application/json
+x-api-key: {{$dotenv API_KEY}}
+
+{
+    "name": "Test Map Order",
+    "map": "test_map_order.scene",
+    "codemap": "test_code",
+    "is_single_player": true,
+    "name_in_game": "Test Map",
+    "is_online": false,
+    "visible_map_select": true,
+    "views": 0,
+    "sponsor": "Test",
+    "image": "test.jpg",
+    "max_players": 4,
+    "display_order": 999
+}
+
+### 4. Test: Crear nuevo map sin display_order (debe auto-asignar)
+POST {{host}}/maps
+Content-Type: application/json
+x-api-key: {{$dotenv API_KEY}}
+
+{
+    "name": "Test Auto Order",
+    "map": "auto_order.scene",
+    "codemap": "auto_code",
+    "is_single_player": true,
+    "name_in_game": "Auto Order Map",
+    "is_online": false,
+    "visible_map_select": true,
+    "views": 0,
+    "sponsor": "Test",
+    "image": "auto.jpg",
+    "max_players": 2
+}
+
+### 5. Test: Intentar crear map con display_order = 0 (debe fallar)
+POST {{host}}/maps
+Content-Type: application/json
+x-api-key: {{$dotenv API_KEY}}
+
+{
+    "name": "Invalid Order",
+    "map": "invalid.scene",
+    "codemap": "invalid",
+    "is_single_player": true,
+    "name_in_game": "Invalid",
+    "is_online": false,
+    "visible_map_select": true,
+    "views": 0,
+    "sponsor": "Test",
+    "image": "invalid.jpg",
+    "max_players": 1,
+    "display_order": 0
+}
+
+### 6. Test: Intentar crear map con display_order negativo (debe fallar)
+POST {{host}}/maps
+Content-Type: application/json
+
+{
+    "name": "Negative Order",
+    "map": "negative.scene",
+    "codemap": "negative",
+    "is_single_player": true,
+    "name_in_game": "Negative",
+    "is_online": false,
+    "visible_map_select": true,
+    "views": 0,
+    "sponsor": "Test",
+    "image": "negative.jpg",
+    "max_players": 1,
+    "display_order": -5
+}
+
+### 7. Test: Actualizar display_order de un map existente
+PUT {{host}}/maps/1
+Content-Type: application/json
+x-api-key: {{$dotenv API_KEY}}
+
+{
+    "display_order": 5
+}
+
+### 8. Test: Actualizar con display_order duplicado (debe auto-incrementar otros)
+PUT {{host}}/maps/2
+Content-Type: application/json
+x-api-key: {{$dotenv API_KEY}}
+
+{
+    "display_order": 5
+}
+
+### 9. Test: Actualizar con display_order = 0 (debe fallar)
+PUT {{host}}/maps/1
+Content-Type: application/json
+x-api-key: {{$dotenv API_KEY}}
+
+{
+    "display_order": 0
+}
+
+### 10. Test: Verificar orden después de cambios duplicados
+GET {{host}}/maps
+x-api-key: {{$dotenv API_KEY}}
+
+### 11. Test: Stats admin - verificar que cuenta todos los maps
+GET {{host}}/admin/api/stats
