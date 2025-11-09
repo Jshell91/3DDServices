@@ -10,6 +10,17 @@ class GameServerMonitor {
         this.retryCount = 0;
         this.maxRetries = 3;
         this.isVisible = false;
+        
+        // API Key para autenticación (desde configuración)
+        this.apiKey = this.loadApiKey();
+        
+        // Nota: IP 92.191.152.245 añadida al whitelist del servidor
+    }
+
+    loadApiKey() {
+        // En producción, esto podría venir de una variable global o config
+        // Usar la nueva API key que coincide con el .env del servidor
+        return window.GSM_CONFIG?.apiKey || 'GSM_PROD_2025_9kL3mN8pQ7vR2xZ5wA4tY6uI1oE0';
     }
 
     async initialize() {
@@ -46,8 +57,20 @@ class GameServerMonitor {
         if (!this.isConnected) return;
 
         try {
-            const response = await fetch(`${this.apiUrl}/dashboard/summary`);
+            console.log('🔑 Sending request with API Key:', this.apiKey.substring(0, 10) + '...');
+            console.log('🌐 Request URL:', `${this.apiUrl}/dashboard/summary`);
+            
+            const response = await fetch(`${this.apiUrl}/dashboard/summary`, {
+                headers: {
+                    'X-API-Key': this.apiKey,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            console.log('📡 Response status:', response.status, response.statusText);
+            
             const data = await response.json();
+            console.log('📊 Response data:', data);
             
             if (data.ok) {
                 this.updateServerData(data);
@@ -56,7 +79,7 @@ class GameServerMonitor {
                 throw new Error(data.error || 'Failed to load server data');
             }
         } catch (error) {
-            console.error('Error loading server data:', error);
+            console.error('❌ Error loading server data:', error);
             this.handleConnectionError();
         }
     }

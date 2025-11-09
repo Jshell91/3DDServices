@@ -1,10 +1,11 @@
 # 3DDServices
 
-A comprehensive Node.js web service for managing game analytics, maps, online sessions, and player interactions with PostgreSQL database integration.
+A comprehensive Node.js web service for managing game analytics, maps, online sessions, and player interactions with PostgreSQL database integration. Now includes **Game Server Manager** for real-time monitoring of Unreal dedicated servers.
 
 ## 🚀 Main Features
 - **REST API** with Express.js
 - **Admin Dashboard** with authentication and maps management
+- **🎮 Game Server Manager** - Real-time monitoring of Unreal dedicated servers *(New Nov 2025)*
 - **Display Order Management** with drag & drop reordering
 - **Real-time Online Maps** management
 - **Player Analytics** and level tracking
@@ -18,10 +19,11 @@ A comprehensive Node.js web service for managing game analytics, maps, online se
 1. [Installation](#installation)
 2. [Configuration](#configuration)
 3. [Usage](#usage)
-4. [Admin Dashboard](#admin-dashboard)
-5. [API Endpoints](#api-endpoints)
-6. [Database Schema](#database-schema)
-7. [Development](#development)
+4. [🎮 Game Server Manager](#game-server-manager)
+5. [Admin Dashboard](#admin-dashboard)
+6. [API Endpoints](#api-endpoints)
+7. [Database Schema](#database-schema)
+8. [Development](#development)
 
 ## 🛠️ Installation
 
@@ -80,7 +82,50 @@ npm run dev
 
 The server will start on `http://localhost:3000`
 
-## 🎛️ Admin Dashboard
+## � Game Server Manager
+
+**NEW November 2025**: Real-time monitoring system for Unreal dedicated servers.
+
+### Features
+- ✅ **8 Unreal Servers Monitored** - Real-time health tracking
+- ✅ **Ubuntu System Metrics** - CPU, Memory, Disk, Uptime monitoring  
+- ✅ **Security Layer** - API Key + IP Whitelist authentication
+- ✅ **Dashboard Integration** - "Game Servers" tab in admin panel
+- ✅ **Smart Caching** - 5-minute intervals for optimal performance
+- ✅ **Environment Variables** - Secure configuration with .env
+
+### Architecture
+```
+Dashboard (157.230.112.247:3000) ←→ Game Monitor API (217.154.124.154:3001)
+                                        ↓
+                              8x Unreal Servers (8080-8091)
+```
+
+### Monitored Servers
+| Port | Server Name | Type |
+|------|-------------|------|
+| 8080 | 01_MAINWORLD | Main World |
+| 8081 | ART_EXHIBITIONSARTLOBBY | Exhibition |
+| 8082 | ART_EXHIBITIONS_AIArtists | Exhibition |
+| 8083 | ART_EXHIBITIONS_STRANGEWORLDS_ | Exhibition |
+| 8086 | ART_Halloween2025_MULTIPLAYER | Seasonal |
+| 8087 | ART_JULIENVALLETakaBYJULES | Artist |
+| 8090 | SKYNOVAbyNOVA | Artist |
+| 8091 | MALL_DOWNTOWNCITYMALL | Social |
+
+### Quick Access
+- **📋 Full Documentation**: [`docs/GAME_SERVER_MANAGER.md`](docs/GAME_SERVER_MANAGER.md)
+- **⚡ Quick Reference**: [`docs/GSM_QUICK_REFERENCE.md`](docs/GSM_QUICK_REFERENCE.md)  
+- **🚀 Deployment Guide**: [`docs/GSM_DEPLOYMENT_GUIDE.md`](docs/GSM_DEPLOYMENT_GUIDE.md)
+
+### Access the Monitor
+1. Open dashboard: `http://localhost:3000` (or production URL)
+2. Go to **"Game Servers"** tab
+3. View real-time server status and system metrics
+
+**Status**: ✅ **Phase 1 Complete** - Health Monitoring Operational
+
+## �🎛️ Admin Dashboard
 
 Access the admin dashboard at `http://localhost:3000/admin` or `http://localhost:3000/dashboard/login.html`
 

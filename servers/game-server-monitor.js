@@ -8,8 +8,32 @@ const { exec } = require('child_process');
 const fs = require('fs').promises;
 const path = require('path');
 
+// Cargar variables de entorno
+require('dotenv').config();
+
 const app = express();
 const PORT = process.env.GSM_PORT || 3001;
+
+// Configuración de seguridad
+const SECURITY_CONFIG = {
+    // API Key para autenticación (desde .env)
+    apiKey: process.env.GSM_API_KEY || 'gsm_dev_key_2025_change_me',
+    
+    // IP Whitelist (desde .env o array por defecto)
+    allowedIPs: process.env.GSM_ALLOWED_IPS ? 
+        process.env.GSM_ALLOWED_IPS.split(',').map(ip => ip.trim()) : [
+        '127.0.0.1',           // Localhost
+        '::1',                 // IPv6 localhost  
+        '157.230.112.247',     // Servidor API principal
+        '217.154.124.154',     // Servidor de juegos (self)
+        '92.191.152.245',      // IP pública del desarrollador
+    ],
+    
+    // Endpoints que NO requieren autenticación
+    publicEndpoints: [
+        '/health'              // Health check siempre público
+    ]
+};
 
 // Configuración de servidores (simplificada para monitoring)
 const SERVER_CONFIG = {
@@ -36,6 +60,78 @@ const SYSTEM_METRICS_CACHE_DURATION = 300000; // 300 segundos (5 minutos)
 
 app.use(cors());
 app.use(express.json());
+
+// ================================
+// SECURITY MIDDLEWARE
+// ================================
+
+// Middleware de seguridad: IP Whitelist + API Key
+app.use((req, res, next) => {
+    const clientIP = req.ip || req.connection.remoteAddress || req.socket.remoteAddress || 
+                     (req.connection.socket ? req.connection.socket.remoteAddress : null);
+    
+    // Obtener IP real (considerando proxies)
+    const realIP = req.headers['x-forwarded-for']?.split(',')[0] || 
+                   req.headers['x-real-ip'] || 
+                   clientIP;
+    
+    console.log(`🔒 Security check: ${realIP} → ${req.method} ${req.path}`);
+    
+    // Verificar si es un endpoint público
+    const isPublicEndpoint = SECURITY_CONFIG.publicEndpoints.some(endpoint => 
+        req.path === endpoint || req.path.startsWith(endpoint)
+    );
+    
+    if (isPublicEndpoint) {
+        console.log(`✅ Public endpoint access allowed: ${req.path}`);
+        return next();
+    }
+    
+    // Verificar IP Whitelist
+    const isIPAllowed = SECURITY_CONFIG.allowedIPs.some(allowedIP => {
+        // Normalizar IPs para comparación
+        const normalizedRealIP = realIP.replace('::ffff:', '');
+        const normalizedAllowedIP = allowedIP.replace('::ffff:', '');
+        return normalizedRealIP === normalizedAllowedIP;
+    });
+    
+    if (!isIPAllowed) {
+        console.log(`❌ IP not in whitelist: ${realIP}`);
+        return res.status(403).json({
+            ok: false,
+            error: 'Access forbidden: IP not authorized',
+            ip: realIP,
+            timestamp: new Date().toISOString()
+        });
+    }
+    
+    // Verificar API Key
+    const providedKey = req.headers['x-api-key'] || 
+                       req.headers['authorization']?.replace('Bearer ', '') ||
+                       req.query.apikey;
+    
+    if (!providedKey) {
+        console.log(`❌ No API key provided from ${realIP}`);
+        return res.status(401).json({
+            ok: false,
+            error: 'Authentication required: API key missing',
+            help: 'Provide API key via header "X-API-Key" or query parameter "apikey"',
+            timestamp: new Date().toISOString()
+        });
+    }
+    
+    if (providedKey !== SECURITY_CONFIG.apiKey) {
+        console.log(`❌ Invalid API key from ${realIP}: ${providedKey}`);
+        return res.status(401).json({
+            ok: false,
+            error: 'Authentication failed: Invalid API key',
+            timestamp: new Date().toISOString()
+        });
+    }
+    
+    console.log(`✅ Security check passed: ${realIP}`);
+    next();
+});
 
 // Cache para evitar checks muy frecuentes
 let cachedStatus = null;
@@ -545,18 +641,29 @@ function generateAlerts(servers) {
 // SERVER STARTUP
 // ================================
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, () => {
     console.log(`🎮 Game Server Manager API - Phase 1 (Health Monitoring)`);
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📊 Monitoring ${Object.keys(SERVER_CONFIG.servers).length} Unreal servers`);
     console.log(``);
-    console.log(`🔗 Endpoints:`);
+    console.log(`� Security Configuration:`);
+    console.log(`   🔑 API Key required: ${SECURITY_CONFIG.apiKey === 'gsm_dev_key_2025_change_me' ? '⚠️  CHANGE DEFAULT KEY!' : '✅ Custom key set'}`);
+    console.log(`   🌐 IP Whitelist: ${SECURITY_CONFIG.allowedIPs.length} authorized IPs`);
+    console.log(`   📋 Allowed IPs: ${SECURITY_CONFIG.allowedIPs.join(', ')}`);
+    console.log(`   🚪 Public endpoints: ${SECURITY_CONFIG.publicEndpoints.join(', ')}`);
+    console.log(``);
+    console.log(`�🔗 Endpoints (🔒 = Auth Required):`);
     console.log(`   GET  /health                    - API health check`);
-    console.log(`   GET  /servers/status            - All servers status`);
-    console.log(`   GET  /servers/:port/health      - Specific server health`);
-    console.log(`   GET  /servers/:port/logs        - Server logs (read-only)`);
-    console.log(`   GET  /system/metrics            - System-wide metrics (CPU, RAM, Disk)`);
-    console.log(`   GET  /dashboard/summary         - Dashboard optimized data`);
+    console.log(`   GET  /servers/status      🔒    - All servers status`);
+    console.log(`   GET  /servers/:port/health🔒    - Specific server health`);
+    console.log(`   GET  /servers/:port/logs  🔒    - Server logs (read-only)`);
+    console.log(`   GET  /system/metrics      🔒    - System-wide metrics (CPU, RAM, Disk)`);
+    console.log(`   GET  /dashboard/summary   🔒    - Dashboard optimized data`);
+    console.log(``);
+    console.log(`🔑 Authentication Methods:`);
+    console.log(`   Header: X-API-Key: ${SECURITY_CONFIG.apiKey}`);
+    console.log(`   Query:  ?apikey=${SECURITY_CONFIG.apiKey}`);
+    console.log(`   Bearer: Authorization: Bearer ${SECURITY_CONFIG.apiKey}`);
     console.log(``);
     console.log(`⏱️  Cache duration: ${CACHE_DURATION/1000}s`);
     console.log(`📋 Log directory: ${SERVER_CONFIG.logDir}`);

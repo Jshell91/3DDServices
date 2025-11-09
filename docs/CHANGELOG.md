@@ -2,6 +2,59 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.0.0] - 2025-11-09
+
+### 🎮 NEW MAJOR FEATURE: Game Server Manager
+- **Real-time Server Monitoring**: Complete health monitoring for 8 Unreal dedicated servers
+- **Ubuntu System Metrics**: CPU, Memory, Disk, Load Average, and Uptime tracking
+- **Dashboard Integration**: New "Game Servers" tab in admin panel
+- **Security Implementation**: 
+  - API Key authentication with .env configuration
+  - IP Whitelist for authorized access only
+  - Dual-layer security (API Key + IP validation)
+- **Smart Caching**: 5-minute intervals to optimize server resources
+- **Production Architecture**: 
+  - Backend API running on 217.154.124.154:3001
+  - Frontend integrated in existing dashboard
+  - Screen session management for background processes
+
+### 🚀 Added
+- **Game Server Monitor API**: Complete Node.js service with Express
+- **System Metrics Collection**: Real-time Ubuntu server statistics
+- **Frontend Integration**: JavaScript module for dashboard connectivity
+- **Environment Variables**: Secure .env configuration system
+- **Comprehensive Documentation**:
+  - `GAME_SERVER_MANAGER.md` - Complete system documentation
+  - `GSM_QUICK_REFERENCE.md` - Essential commands and troubleshooting
+  - `GSM_DEPLOYMENT_GUIDE.md` - Installation and configuration guide
+
+### 🔧 Architecture
+- **Multi-server Setup**: API server (157.230.112.247) + Game server (217.154.124.154)
+- **Monitored Ports**: 8080-8091 covering all Unreal server instances
+- **Health Scoring**: Intelligent health assessment based on multiple metrics
+- **Auto-retry Logic**: Automatic reconnection and error handling
+- **Screen Session Management**: Background service with persistent monitoring
+
+### 🛡️ Security
+- **API Key Protection**: `GSM_PROD_2025_9kL3mN8pQ7vR2xZ5wA4tY6uI1oE0`
+- **IP Whitelist**: Authorized IPs only (localhost, API server, game server, developer)
+- **Public Endpoints**: Only `/health` accessible without authentication
+- **Multiple Auth Methods**: Header, Query parameter, and Bearer token support
+
+### 📊 Monitoring Capabilities
+- **Server Status**: Running/Stopped state for each Unreal server
+- **Performance Metrics**: Individual CPU and memory usage per server
+- **System Overview**: Overall Ubuntu server performance
+- **Health Levels**: Healthy/Warning/Critical status classification
+- **Uptime Tracking**: Individual server and system uptime
+- **Alert System**: Automatic problem detection and reporting
+
+### 🎯 Status
+- **Phase 1**: ✅ **COMPLETE** - Health Monitoring Operational
+- **Phase 2**: 🔄 **PLANNED** - Server Control Operations (Start/Stop/Restart)
+
+---
+
 ## [3.1.0] - 2025-09-06
 
 ### 🚀 Added
