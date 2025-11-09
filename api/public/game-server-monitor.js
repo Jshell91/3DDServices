@@ -39,7 +39,7 @@ class GameServerMonitor {
 
     async testConnection() {
         try {
-            const response = await fetch(`${this.apiUrl}/health`, { 
+            const response = await fetch('/api/dashboard/gsm-health', { 
                 signal: AbortSignal.timeout(5000) 
             });
             const data = await response.json();
@@ -56,9 +56,9 @@ class GameServerMonitor {
         if (!this.isConnected) return;
 
         try {
-            console.log('🌐 Request URL:', `${this.apiUrl}/dashboard/summary`);
+            console.log('🌐 Request URL: /api/dashboard/gsm-data');
             
-            const response = await fetch(`${this.apiUrl}/dashboard/summary`, {
+            const response = await fetch('/api/dashboard/gsm-data', {
                 headers: {
                     'Content-Type': 'application/json'
                 }

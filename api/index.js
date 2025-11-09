@@ -648,11 +648,39 @@ app.post('/odin/token', async (req, res) => {
 });
 
 // ================================
-// GAME SERVER MANAGER PROXY
+// GAME SERVER MANAGER INTEGRATION
 // ================================
-// Proxy endpoints to GSM backend to avoid CORS issues
 const GSM_API_URL = process.env.GSM_API_URL || 'http://217.154.124.154:3001';
 const GSM_API_KEY = process.env.GSM_API_KEY || 'GSM_PROD_2025_9kL3mN8pQ7vR2xZ5wA4tY6uI1oE0';
+
+// GSM Data endpoint for dashboard
+app.get('/api/dashboard/gsm-data', async (req, res) => {
+  try {
+    const fetch = (await import('node-fetch')).default;
+    const response = await fetch(`${GSM_API_URL}/dashboard/summary`, {
+      headers: { 'X-API-Key': GSM_API_KEY, 'Content-Type': 'application/json' }
+    });
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('GSM Data error:', error.message);
+    res.status(500).json({ ok: false, error: 'Game Server Manager unavailable' });
+  }
+});
+
+app.get('/api/dashboard/gsm-health', async (req, res) => {
+  try {
+    const fetch = (await import('node-fetch')).default;
+    const response = await fetch(`${GSM_API_URL}/health`, {
+      headers: { 'X-API-Key': GSM_API_KEY, 'Content-Type': 'application/json' }
+    });
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('GSM Health error:', error.message);
+    res.status(500).json({ ok: false, error: 'Game Server Manager unavailable' });
+  }
+});
 
 // GSM Proxy Routes - Multiple specific routes instead of wildcard
 app.get('/api/gsm/health', async (req, res) => {
