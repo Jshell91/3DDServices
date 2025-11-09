@@ -2,7 +2,7 @@
 // Simple health monitoring integration for existing dashboard
 
 class GameServerMonitor {
-    constructor(apiUrl = 'http://217.154.124.154:3001') {
+    constructor(apiUrl = '/api/gsm') {
         this.apiUrl = apiUrl;
         this.isConnected = false;
         this.servers = new Map();
@@ -11,16 +11,15 @@ class GameServerMonitor {
         this.maxRetries = 3;
         this.isVisible = false;
         
-        // API Key para autenticación (desde configuración)
-        this.apiKey = this.loadApiKey();
+        // API Key ya no necesaria - el proxy maneja la autenticación
+        this.apiKey = null;
         
-        // Nota: IP 92.191.152.245 añadida al whitelist del servidor
+        // Nota: Usando proxy del dashboard para evitar problemas CORS
     }
 
     loadApiKey() {
-        // En producción, esto podría venir de una variable global o config
-        // Usar la nueva API key que coincide con el .env del servidor
-        return window.GSM_CONFIG?.apiKey || 'GSM_PROD_2025_9kL3mN8pQ7vR2xZ5wA4tY6uI1oE0';
+        // No necesario - el proxy maneja la autenticación
+        return null;
     }
 
     async initialize() {
@@ -57,12 +56,10 @@ class GameServerMonitor {
         if (!this.isConnected) return;
 
         try {
-            console.log('🔑 Sending request with API Key:', this.apiKey.substring(0, 10) + '...');
             console.log('🌐 Request URL:', `${this.apiUrl}/dashboard/summary`);
             
             const response = await fetch(`${this.apiUrl}/dashboard/summary`, {
                 headers: {
-                    'X-API-Key': this.apiKey,
                     'Content-Type': 'application/json'
                 }
             });

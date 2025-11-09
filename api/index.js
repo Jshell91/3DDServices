@@ -647,6 +647,37 @@ app.post('/odin/token', async (req, res) => {
   }
 });
 
+// ================================
+// GAME SERVER MANAGER PROXY
+// ================================
+// Proxy endpoints to GSM backend to avoid CORS issues
+const GSM_API_URL = process.env.GSM_API_URL || 'http://217.154.124.154:3001';
+const GSM_API_KEY = process.env.GSM_API_KEY || 'GSM_PROD_2025_9kL3mN8pQ7vR2xZ5wA4tY6uI1oE0';
+
+app.get('/api/gsm/*', async (req, res) => {
+  try {
+    const gsmPath = req.path.replace('/api/gsm', '');
+    const gsmUrl = `${GSM_API_URL}${gsmPath}`;
+    
+    const fetch = (await import('node-fetch')).default;
+    const response = await fetch(gsmUrl, {
+      headers: {
+        'X-API-Key': GSM_API_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('GSM Proxy error:', error);
+    res.status(500).json({ 
+      ok: false, 
+      error: 'Game Server Manager unavailable',
+      details: error.message 
+    });
+  }
+});
 
 app.listen(port, '0.0.0.0', () => {
   console.log(`\n🚀 3DDServices Server started successfully!`);
@@ -654,6 +685,7 @@ app.listen(port, '0.0.0.0', () => {
   console.log(`🎛️  Admin Dashboard: http://0.0.0.0:${port}/admin`);
   console.log(`🔗 API Info: http://0.0.0.0:${port}/api/info`);
   console.log(`💚 Health Check: http://0.0.0.0:${port}/health`);
+  console.log(`🎮 GSM Proxy: http://0.0.0.0:${port}/api/gsm/*`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📅 Started at: ${new Date().toISOString()}`);
   console.log(`\n✅ Ready to accept connections...\n`);
