@@ -21,6 +21,7 @@ module.exports = {
         PORT: 3000,
         NODE_OPTIONS: '--max-old-space-size=512'
       },
+      env_file: '.env',
       env_development: {
         NODE_ENV: 'development',
         PORT: 3000,
