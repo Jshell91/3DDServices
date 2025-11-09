@@ -642,7 +642,7 @@ function generateAlerts(servers) {
 // ================================
 
 // Control endpoint for server actions (start/stop/restart)
-app.post('/servers/:port/control', authenticateApiKey, validateIP, async (req, res) => {
+app.post('/servers/:port/control', async (req, res) => {
     try {
         const port = parseInt(req.params.port, 10);
         const { action } = req.body;
