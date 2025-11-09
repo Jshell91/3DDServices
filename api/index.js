@@ -696,6 +696,41 @@ app.get('/api/dashboard/gsm-health', async (req, res) => {
   }
 });
 
+// Control endpoints for servers (Phase 2 prep) - proxy to GSM API
+// POST /api/dashboard/gsm/servers/:port/:action  action = start|stop|restart
+app.post('/api/dashboard/gsm/servers/:port/:action', async (req, res) => {
+  try {
+    const { port, action } = req.params;
+    const allowed = ['start', 'stop', 'restart'];
+    if (!/^[0-9]+$/.test(port) || !allowed.includes(action)) {
+      return res.status(400).json({ ok: false, error: 'Invalid port or action' });
+    }
+
+    console.log(`GSM CONTROL: action=${action} port=${port} requested by ${req.ip}`);
+
+    const fetch = (await import('node-fetch')).default;
+
+    // Proxy the control request to the GSM API. The GSM API should implement
+    // a control endpoint such as POST /servers/:port/control with body { action }
+    const controlUrl = `${GSM_API_URL}/servers/${port}/control`;
+    const response = await fetch(controlUrl, {
+      method: 'POST',
+      headers: { 'X-API-Key': GSM_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action })
+    });
+
+    const data = await (response.headers.get('content-type') || '').includes('application/json')
+      ? await response.json()
+      : { ok: response.ok, status: response.status };
+
+    // Mirror status from GSM when possible
+    return res.status(response.status).json(data);
+  } catch (err) {
+    console.error('GSM Control error:', err.message);
+    return res.status(500).json({ ok: false, error: 'Failed to proxy control request to GSM' });
+  }
+});
+
 
 
 app.listen(port, '0.0.0.0', () => {

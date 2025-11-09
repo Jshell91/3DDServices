@@ -314,6 +314,12 @@ class GameServerMonitor {
                             <div class="server-uptime">
                                 Uptime: ${server.uptime}
                             </div>
+
+                            <div class="server-controls" style="margin-top:10px; display:flex; gap:8px;">
+                                <button class="btn btn-sm" onclick="gameMonitor.controlServer(${server.port}, 'start')">▶️ Start</button>
+                                <button class="btn btn-sm" onclick="gameMonitor.controlServer(${server.port}, 'stop')">⏹️ Stop</button>
+                                <button class="btn btn-sm" onclick="gameMonitor.controlServer(${server.port}, 'restart')">🔁 Restart</button>
+                            </div>
                         </div>
                     ` : `
                         <div class="server-offline">
@@ -325,6 +331,29 @@ class GameServerMonitor {
         }).join('');
 
         grid.innerHTML = serverCards;
+    }
+
+    // Control a server via dashboard proxy. action: 'start' | 'stop' | 'restart'
+    async controlServer(port, action) {
+        if (!confirm(`Confirm ${action} on server port ${port}?`)) return;
+
+        try {
+            const url = `/api/dashboard/gsm/servers/${port}/${action}`;
+            console.log('🔑 Sending control request to', url);
+            const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+            const data = await (response.headers.get('content-type') || '').includes('application/json') ? await response.json() : { ok: response.ok };
+
+            if (!response.ok) {
+                alert(`Action failed: ${data.error || 'Unknown error'}`);
+            } else {
+                alert(`Action ${action} sent for port ${port}`);
+                // refresh data after a short delay to allow server state to change
+                setTimeout(() => this.loadServerData(), 1500);
+            }
+        } catch (err) {
+            console.error('Control request error:', err);
+            alert('Failed to send control request');
+        }
     }
 
     getHealthColor(healthLevel) {
