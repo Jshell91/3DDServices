@@ -656,11 +656,17 @@ const GSM_API_KEY = process.env.GSM_API_KEY || 'GSM_PROD_2025_9kL3mN8pQ7vR2xZ5wA
 // GSM Data endpoint for dashboard
 app.get('/api/dashboard/gsm-data', async (req, res) => {
   try {
+    console.log('=== GSM DATA DEBUG ===');
+    console.log('GSM_API_URL:', GSM_API_URL);
+    console.log('GSM_API_KEY length:', GSM_API_KEY ? GSM_API_KEY.length : 'undefined');
+    
     const fetch = (await import('node-fetch')).default;
     const response = await fetch(`${GSM_API_URL}/dashboard/summary`, {
       headers: { 'X-API-Key': GSM_API_KEY, 'Content-Type': 'application/json' }
     });
+    console.log('GSM response status:', response.status);
     const data = await response.json();
+    console.log('GSM response data:', data);
     res.json(data);
   } catch (error) {
     console.error('GSM Data error:', error.message);
@@ -670,11 +676,18 @@ app.get('/api/dashboard/gsm-data', async (req, res) => {
 
 app.get('/api/dashboard/gsm-health', async (req, res) => {
   try {
+    console.log('=== GSM HEALTH DEBUG ===');
+    console.log('GSM_API_URL:', GSM_API_URL);
+    console.log('GSM_API_KEY length:', GSM_API_KEY ? GSM_API_KEY.length : 'undefined');
+    console.log('Making request to:', `${GSM_API_URL}/health`);
+    
     const fetch = (await import('node-fetch')).default;
     const response = await fetch(`${GSM_API_URL}/health`, {
       headers: { 'X-API-Key': GSM_API_KEY, 'Content-Type': 'application/json' }
     });
+    console.log('GSM response status:', response.status);
     const data = await response.json();
+    console.log('GSM response data:', data);
     res.json(data);
   } catch (error) {
     console.error('GSM Health error:', error.message);
