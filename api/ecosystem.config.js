@@ -31,6 +31,9 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 3000,
         NODE_OPTIONS: '--max-old-space-size=512',
+        // GSM Configuration
+        GSM_API_URL: 'http://217.154.124.154:3001',
+        GSM_API_KEY: 'GSM_PROD_2025_9kL3mN8pQ7vR2xZ5wA4tY6uI1oE0',
         // Keep single instance for now to debug connection issues
         instances: 1,
         exec_mode: 'fork' // Changed from cluster to fork for stability
