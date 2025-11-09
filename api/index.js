@@ -654,9 +654,9 @@ app.post('/odin/token', async (req, res) => {
 const GSM_API_URL = process.env.GSM_API_URL || 'http://217.154.124.154:3001';
 const GSM_API_KEY = process.env.GSM_API_KEY || 'GSM_PROD_2025_9kL3mN8pQ7vR2xZ5wA4tY6uI1oE0';
 
-app.get('/api/gsm/*', async (req, res) => {
+app.get('/api/gsm/:path(*)', async (req, res) => {
   try {
-    const gsmPath = req.path.replace('/api/gsm', '');
+    const gsmPath = '/' + (req.params.path || '');
     const gsmUrl = `${GSM_API_URL}${gsmPath}`;
     
     const fetch = (await import('node-fetch')).default;
