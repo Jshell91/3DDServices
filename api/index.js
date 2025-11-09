@@ -334,6 +334,7 @@ app.use((req, res, next) => {
   const isPublic = (
     req.path.startsWith('/dashboard') ||
     req.path.startsWith('/admin') || // Admin UI/API uses session-based auth
+    req.path.startsWith('/api/dashboard') || // GSM dashboard endpoints
     req.path === '/' ||
     req.path === '/health' ||
     req.path === '/api/info' ||
