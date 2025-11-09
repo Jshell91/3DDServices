@@ -682,66 +682,7 @@ app.get('/api/dashboard/gsm-health', async (req, res) => {
   }
 });
 
-// GSM Proxy Routes - Multiple specific routes instead of wildcard
-app.get('/api/gsm/health', async (req, res) => {
-  try {
-    console.log('=== GSM PROXY DEBUG ===');
-    console.log('GSM_API_URL:', GSM_API_URL);
-    console.log('GSM_API_KEY:', GSM_API_KEY ? 'SET (length: ' + GSM_API_KEY.length + ')' : 'NOT SET');
-    console.log('Request URL:', `${GSM_API_URL}/health`);
-    
-    const fetch = (await import('node-fetch')).default;
-    console.log('Fetch imported successfully');
-    
-    const headers = { 'X-API-Key': GSM_API_KEY, 'Content-Type': 'application/json' };
-    console.log('Headers being sent:', JSON.stringify(headers, null, 2));
-    
-    const response = await fetch(`${GSM_API_URL}/health`, { headers });
-    console.log('Response status:', response.status);
-    console.log('Response headers:', Object.fromEntries(response.headers));
-    
-    const data = await response.json();
-    console.log('Response data:', JSON.stringify(data, null, 2));
-    console.log('=== END DEBUG ===');
-    
-    res.json(data);
-  } catch (error) {
-    console.error('=== GSM PROXY ERROR ===');
-    console.error('Error type:', error.constructor.name);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    console.error('=== END ERROR ===');
-    res.status(500).json({ ok: false, error: 'Game Server Manager unavailable', details: error.message });
-  }
-});
 
-app.get('/api/gsm/dashboard/summary', async (req, res) => {
-  try {
-    const fetch = (await import('node-fetch')).default;
-    const response = await fetch(`${GSM_API_URL}/dashboard/summary`, {
-      headers: { 'X-API-Key': GSM_API_KEY, 'Content-Type': 'application/json' }
-    });
-    const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    console.error('GSM Proxy error:', error);
-    res.status(500).json({ ok: false, error: 'Game Server Manager unavailable', details: error.message });
-  }
-});
-
-app.get('/api/gsm/servers/status', async (req, res) => {
-  try {
-    const fetch = (await import('node-fetch')).default;
-    const response = await fetch(`${GSM_API_URL}/servers/status`, {
-      headers: { 'X-API-Key': GSM_API_KEY, 'Content-Type': 'application/json' }
-    });
-    const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    console.error('GSM Proxy error:', error);
-    res.status(500).json({ ok: false, error: 'Game Server Manager unavailable', details: error.message });
-  }
-});
 
 app.listen(port, '0.0.0.0', () => {
   console.log(`\n🚀 3DDServices Server started successfully!`);
