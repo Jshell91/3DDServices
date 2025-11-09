@@ -645,7 +645,7 @@ function generateAlerts(servers) {
 app.post('/servers/:port/control', async (req, res) => {
     try {
         const port = parseInt(req.params.port, 10);
-        const { action } = req.body;
+        const action = req.body.action || req.query.action;
         
         // Validate inputs
         if (!port || port < 1000 || port > 65535) {
@@ -663,7 +663,7 @@ app.post('/servers/:port/control', async (req, res) => {
         }
         
         // Check if server exists in our config
-        const serverExists = SERVER_CONFIGS.some(config => config.port === port);
+        const serverExists = SERVER_CONFIG.servers[port] !== undefined;
         if (!serverExists) {
             return res.status(404).json({ 
                 ok: false, 
