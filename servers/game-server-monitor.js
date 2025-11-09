@@ -638,6 +638,67 @@ function generateAlerts(servers) {
 }
 
 // ================================
+// CONTROL ENDPOINTS - PHASE 2
+// ================================
+
+// Control endpoint for server actions (start/stop/restart)
+app.post('/servers/:port/control', authenticateApiKey, validateIP, async (req, res) => {
+    try {
+        const port = parseInt(req.params.port, 10);
+        const { action } = req.body;
+        
+        // Validate inputs
+        if (!port || port < 1000 || port > 65535) {
+            return res.status(400).json({ 
+                ok: false, 
+                error: 'Invalid port number' 
+            });
+        }
+        
+        if (!['start', 'stop', 'restart'].includes(action)) {
+            return res.status(400).json({ 
+                ok: false, 
+                error: 'Invalid action. Must be: start, stop, or restart' 
+            });
+        }
+        
+        // Check if server exists in our config
+        const serverExists = SERVER_CONFIGS.some(config => config.port === port);
+        if (!serverExists) {
+            return res.status(404).json({ 
+                ok: false, 
+                error: `Server on port ${port} not found in configuration` 
+            });
+        }
+        
+        console.log(`🎮 CONTROL ACTION: ${action} requested for port ${port} by ${req.ip}`);
+        
+        // For Phase 2 initial implementation - simulate the action
+        // This is safer than executing actual system commands during testing
+        const result = {
+            ok: true,
+            action: action,
+            port: port,
+            simulated: true,
+            message: `Action '${action}' simulated for server on port ${port}`,
+            timestamp: new Date().toISOString()
+        };
+        
+        console.log(`✅ CONTROL RESULT: ${JSON.stringify(result)}`);
+        
+        // Return success response
+        res.json(result);
+        
+    } catch (error) {
+        console.error('❌ Control endpoint error:', error);
+        res.status(500).json({ 
+            ok: false, 
+            error: 'Internal server error during control operation' 
+        });
+    }
+});
+
+// ================================
 // SERVER STARTUP
 // ================================
 
