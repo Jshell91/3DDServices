@@ -46,7 +46,7 @@
 # CHAPAR TODO
 # for session in $(screen -ls | grep -o '^[[:space:]]*[0-9]*\.' | tr -d ' .' ); do screen -S "$session" -X stuff $'\003'; done
 #
-# scp -r -v LinuxServer jota@217.154.124.154:/home/jota/LinuxServer/
+# scp -r -v LinuxServer jota@217.154.124.154:/home/jota/unreal-servers
 # ========================
 # CONFIGURACIÓN
 # ========================
@@ -64,7 +64,7 @@ mkdir -p "$LOG_DIR"
 DEPLOY_SRC="${DEPLOY_SRC:-./LinuxServer}"              # Carpeta local a subir
 DEPLOY_USER="${DEPLOY_USER:-jota}"                     # Usuario remoto
 DEPLOY_HOST="${DEPLOY_HOST:-217.154.124.154}"          # Host/IP remoto
-DEPLOY_PATH="${DEPLOY_PATH:-/home/jota/LinuxServer}"   # Carpeta destino en el servidor
+DEPLOY_PATH="${DEPLOY_PATH:-/home/jota/LinuxServer/LinuxServer}"   # Carpeta destino en el servidor
 DEPLOY_SSH_PORT="${DEPLOY_SSH_PORT:-22}"               # Puerto SSH (por defecto 22)
 
 # Rutas/puertos para ejecutar en remoto tras el deploy

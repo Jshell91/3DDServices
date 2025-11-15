@@ -2,7 +2,7 @@
 // Add this to your existing dashboard.js
 
 class GameServerManager {
-    constructor(apiUrl = 'http://217.154.124.154:3001') {
+    constructor(apiUrl = '/api/dashboard') {
         this.apiUrl = apiUrl;
         this.servers = new Map();
         this.updateInterval = null;
@@ -16,14 +16,25 @@ class GameServerManager {
 
     async loadServers() {
         try {
-            const response = await fetch(`${this.apiUrl}/servers/status`);
+            const response = await fetch(`${this.apiUrl}/gsm-data`, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
             const data = await response.json();
             
             if (data.ok) {
-                Object.entries(data.servers).forEach(([port, server]) => {
-                    this.servers.set(port, server);
+                // Clear existing servers and update with new data
+                this.servers.clear();
+                data.servers.forEach(server => {
+                    this.servers.set(server.port.toString(), {
+                        ...server,
+                        map: server.name || `Port ${server.port}`
+                    });
                 });
                 this.updateServerPanel();
+            } else {
+                this.showError(data.error || 'Failed to load server status');
             }
         } catch (error) {
             console.error('Error loading servers:', error);
@@ -120,17 +131,23 @@ class GameServerManager {
 
     async startServer(port) {
         try {
-            const response = await fetch(`${this.apiUrl}/servers/${port}/start`, { method: 'POST' });
+            const response = await fetch(`${this.apiUrl}/gsm/servers/${port}/start`, { 
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
             const data = await response.json();
             
             if (data.ok) {
                 this.showSuccess(`Starting server on port ${port}`);
-                setTimeout(() => this.loadServers(), 2000);
+                // Reload immediately since cache is invalidated automatically
+                setTimeout(() => this.loadServers(), 1000);
             } else {
-                this.showError(data.error);
+                this.showError(data.error || 'Failed to start server');
             }
         } catch (error) {
-            this.showError('Failed to start server');
+            this.showError('Failed to start server: ' + error.message);
         }
     }
 
@@ -138,17 +155,23 @@ class GameServerManager {
         if (!confirm(`Stop server on port ${port}?`)) return;
         
         try {
-            const response = await fetch(`${this.apiUrl}/servers/${port}/stop`, { method: 'POST' });
+            const response = await fetch(`${this.apiUrl}/gsm/servers/${port}/stop`, { 
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
             const data = await response.json();
             
             if (data.ok) {
                 this.showSuccess(`Stopping server on port ${port}`);
+                // Reload immediately since cache is invalidated automatically
                 setTimeout(() => this.loadServers(), 1000);
             } else {
-                this.showError(data.error);
+                this.showError(data.error || 'Failed to stop server');
             }
         } catch (error) {
-            this.showError('Failed to stop server');
+            this.showError('Failed to stop server: ' + error.message);
         }
     }
 
@@ -156,30 +179,31 @@ class GameServerManager {
         if (!confirm(`Restart server on port ${port}?`)) return;
         
         try {
-            const response = await fetch(`${this.apiUrl}/servers/${port}/restart`, { method: 'POST' });
+            const response = await fetch(`${this.apiUrl}/gsm/servers/${port}/restart`, { 
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
             const data = await response.json();
             
             if (data.ok) {
                 this.showSuccess(`Restarting server on port ${port}`);
-                setTimeout(() => this.loadServers(), 3000);
+                // Reload immediately since cache is invalidated automatically
+                setTimeout(() => this.loadServers(), 1000);
             } else {
-                this.showError(data.error);
+                this.showError(data.error || 'Failed to restart server');
             }
         } catch (error) {
-            this.showError('Failed to restart server');
+            this.showError('Failed to restart server: ' + error.message);
         }
     }
 
     async showLogs(port) {
         try {
-            const response = await fetch(`${this.apiUrl}/servers/${port}/logs?lines=100`);
-            const data = await response.json();
-            
-            if (data.ok) {
-                this.openLogModal(port, data.logs);
-            } else {
-                this.showError('Could not load logs');
-            }
+            // Note: Log endpoint not implemented in proxy yet
+            // For now, show a placeholder message
+            this.openLogModal(port, [`Logs for server ${port} not available yet`, 'Feature coming soon...']);
         } catch (error) {
             this.showError('Failed to load logs');
         }

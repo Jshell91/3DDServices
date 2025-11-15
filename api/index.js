@@ -651,8 +651,8 @@ app.post('/odin/token', async (req, res) => {
 // ================================
 // GAME SERVER MANAGER INTEGRATION
 // ================================
-const GSM_API_URL = process.env.GSM_API_URL || 'http://217.154.124.154:3001';
-const GSM_API_KEY = process.env.GSM_API_KEY || 'GSM_PROD_2025_9kL3mN8pQ7vR2xZ5wA4tY6uI1oE0';
+const GSM_API_URL = process.env.GSM_API_URL;
+const GSM_API_KEY = process.env.GSM_API_KEY;
 
 // GSM Data endpoint for dashboard
 app.get('/api/dashboard/gsm-data', async (req, res) => {

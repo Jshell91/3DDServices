@@ -11,6 +11,18 @@ const path = require('path');
 // Cargar variables de entorno
 require('dotenv').config();
 
+// Cargar configuración de servidores PM2
+const serverConfigPath = path.join(__dirname, 'server-config.json');
+let PM2_SERVER_CONFIG = null;
+
+try {
+    const configData = require('fs').readFileSync(serverConfigPath, 'utf8');
+    PM2_SERVER_CONFIG = JSON.parse(configData);
+    console.log('✅ PM2 server configuration loaded');
+} catch (error) {
+    console.warn('⚠️  PM2 config not found, using legacy mode');
+}
+
 const app = express();
 const PORT = process.env.GSM_PORT || 3001;
 
@@ -43,7 +55,7 @@ const SERVER_CONFIG = {
         8081: { name: 'ART_EXHIBITIONSARTLOBBY', type: 'exhibition' },
         8082: { name: 'ART_EXHIBITIONS_AIArtists', type: 'exhibition' },
         8083: { name: 'ART_EXHIBITIONS_STRANGEWORLDS_', type: 'exhibition' },
-        //8085: { name: 'ART_EXHIBITIONS_SHEisAI', type: 'exhibition' },
+        8084: { name: 'ART_EXHIBITIONS_4Deya', type: 'exhibition' },
         8086: { name: 'ART_Halloween2025_MULTIPLAYER', type: 'seasonal' },
         8087: { name: 'ART_JULIENVALLETakaBYJULES', type: 'artist' },
         8090: { name: 'SKYNOVAbyNOVA', type: 'artist' },
@@ -142,6 +154,72 @@ const CACHE_DURATION = 300000; // 300 segundos (5 minutos)
 // MONITORING FUNCTIONS
 // ================================
 
+// Get PM2 logs for an application
+async function getPM2Logs(pm2AppName, lines = 50) {
+    try {
+        const logResult = await execPM2Command(`pm2 logs ${pm2AppName} --lines ${lines} --nostream`);
+        return logResult.stdout.split('\n').filter(line => line.trim());
+    } catch (error) {
+        console.log(`❌ Error getting PM2 logs for ${pm2AppName}:`, error.message);
+        return [];
+    }
+}
+
+// Get PM2 process information
+async function getPM2ProcessInfo(pm2AppName) {
+    try {
+        const statusResult = await execPM2Command(`pm2 jlist`);
+        const processes = JSON.parse(statusResult.stdout);
+        const appProcess = processes.find(p => p.name === pm2AppName);
+        
+        if (appProcess) {
+            return {
+                pid: appProcess.pid,
+                startTime: new Date(appProcess.pm2_env.created_at).toISOString(),
+                status: appProcess.pm2_env.status,
+                restarts: appProcess.pm2_env.restart_time,
+                uptime: appProcess.pm2_env.pm_uptime,
+                cpu: appProcess.monit?.cpu || 0,
+                memory: appProcess.monit?.memory || 0,
+                pm2_managed: true,
+                pm2_id: appProcess.pm2_env.pm_id,
+                pm2_name: pm2AppName
+            };
+        }
+        return null;
+    } catch (error) {
+        console.log(`❌ Error getting PM2 info for ${pm2AppName}:`, error.message);
+        return null;
+    }
+}
+
+// Enhanced server status check with PM2 awareness
+async function checkServerStatus(port) {
+    const pm2AppName = getPM2AppName(port);
+    
+    // Check port availability
+    const portActive = await checkPortStatus(port);
+    
+    // Get PM2 status if available
+    let pm2Status = null;
+    if (pm2AppName) {
+        try {
+            pm2Status = await getPM2ProcessInfo(pm2AppName);
+        } catch (error) {
+            console.log(`⚠️ PM2 status check failed for ${pm2AppName}`);
+        }
+    }
+    
+    return {
+        port: port,
+        port_active: portActive,
+        pm2_managed: !!pm2Status,
+        pm2_status: pm2Status?.status || 'unknown',
+        pm2_name: pm2AppName,
+        process_info: pm2Status
+    };
+}
+
 async function checkPortStatus(port) {
     return new Promise((resolve) => {
         // Usar ss (más moderno) o netstat como fallback
@@ -152,6 +230,20 @@ async function checkPortStatus(port) {
 }
 
 async function getProcessInfo(port) {
+    // Intentar obtener info desde PM2 primero
+    const pm2AppName = getPM2AppName(port);
+    if (pm2AppName) {
+        try {
+            const pm2Info = await getPM2ProcessInfo(pm2AppName);
+            if (pm2Info) {
+                return pm2Info;
+            }
+        } catch (error) {
+            console.log(`⚠️ PM2 process info failed for ${pm2AppName}, falling back to legacy`);
+        }
+    }
+    
+    // Fallback al método legacy (pgrep)
     return new Promise((resolve) => {
         const serverName = SERVER_CONFIG.servers[port]?.name || 'Unreal';
         exec(`pgrep -fl "${serverName}" | head -1`, (error, stdout) => {
@@ -161,7 +253,8 @@ async function getProcessInfo(port) {
                 const parts = stdout.trim().split(' ');
                 resolve({
                     pid: parseInt(parts[0]),
-                    startTime: new Date().toISOString() // Simplificado por ahora
+                    startTime: new Date().toISOString(), // Simplificado por ahora
+                    pm2_managed: false
                 });
             }
         });
@@ -197,6 +290,20 @@ async function getSystemResources(pid) {
 }
 
 async function getRecentLogs(port, lines = 10) {
+    // Intentar obtener logs de PM2 primero
+    const pm2AppName = getPM2AppName(port);
+    if (pm2AppName) {
+        try {
+            const pm2Logs = await getPM2Logs(pm2AppName, lines);
+            if (pm2Logs.length > 0) {
+                return pm2Logs;
+            }
+        } catch (error) {
+            console.log(`⚠️ PM2 logs failed for ${pm2AppName}, falling back to legacy`);
+        }
+    }
+    
+    // Fallback a logs legacy
     try {
         const logFile = path.join(SERVER_CONFIG.logDir, `server-${port}.log`);
         const exists = await fs.access(logFile).then(() => true).catch(() => false);
@@ -334,13 +441,26 @@ async function checkAllServers() {
     for (const [port, config] of Object.entries(SERVER_CONFIG.servers)) {
         const portNum = parseInt(port);
         summary.total++;        try {
-            const [isRunning, process, logs] = await Promise.all([
-                checkPortStatus(portNum),
-                getProcessInfo(portNum),
+            const [serverStatus, logs] = await Promise.all([
+                checkServerStatus(portNum),
                 getRecentLogs(portNum, 5)
             ]);
             
-            const resources = await getSystemResources(process?.pid);
+            const isRunning = serverStatus.port_active;
+            const process = serverStatus.process_info;
+            
+            // Si PM2 está gestionando, usar sus métricas, sino usar legacy
+            let resources = null;
+            if (process && process.pm2_managed) {
+                resources = {
+                    cpu: process.cpu,
+                    memory: Math.round((process.memory / 1024 / 1024) * 100) / 100, // MB
+                    pid: process.pid
+                };
+            } else if (process?.pid) {
+                resources = await getSystemResources(process.pid);
+            }
+            
             const healthScore = calculateHealthScore(isRunning, resources, logs.length > 0);
             
             let status = 'stopped';
@@ -370,6 +490,9 @@ async function checkAllServers() {
                 resources: resources,
                 hasLogs: logs.length > 0,
                 logCount: logs.length,
+                pm2_managed: serverStatus.pm2_managed,
+                pm2_status: serverStatus.pm2_status,
+                pm2_name: serverStatus.pm2_name,
                 lastChecked: new Date().toISOString()
             };
             
@@ -437,13 +560,26 @@ app.get('/servers/:port/health', async (req, res) => {
             return res.status(404).json({ ok: false, error: 'Server port not configured' });
         }
         
-        const [isRunning, process, logs] = await Promise.all([
-            checkPortStatus(port),
-            getProcessInfo(port),
+        const [serverStatus, logs] = await Promise.all([
+            checkServerStatus(port),
             getRecentLogs(port, 20)
         ]);
         
-        const resources = await getSystemResources(process?.pid);
+        const isRunning = serverStatus.port_active;
+        const process = serverStatus.process_info;
+        
+        // Si PM2 está gestionando, usar sus métricas
+        let resources = null;
+        if (process && process.pm2_managed) {
+            resources = {
+                cpu: process.cpu,
+                memory: Math.round((process.memory / 1024 / 1024) * 100) / 100, // MB
+                pid: process.pid
+            };
+        } else if (process?.pid) {
+            resources = await getSystemResources(process.pid);
+        }
+        
         const healthScore = calculateHealthScore(isRunning, resources, logs.length > 0);
         
         let status = 'stopped';
@@ -469,6 +605,9 @@ app.get('/servers/:port/health', async (req, res) => {
                 resources: resources,
                 recentLogs: logs.slice(-5), // Solo últimas 5 líneas
                 logCount: logs.length,
+                pm2_managed: serverStatus.pm2_managed,
+                pm2_status: serverStatus.pm2_status,
+                pm2_name: serverStatus.pm2_name,
                 recommendations: generateRecommendations(isRunning, resources, healthScore),
                 lastChecked: new Date().toISOString()
             }
@@ -525,6 +664,15 @@ app.get('/system/metrics', async (req, res) => {
 // Resumen para dashboard
 app.get('/dashboard/summary', async (req, res) => {
     try {
+        const forceRefresh = req.query.refresh === 'true';
+        
+        // Si se solicita refresh, invalidar cache
+        if (forceRefresh) {
+            cachedStatus = null;
+            lastCheck = 0;
+            console.log(`🔄 Dashboard summary: Force refresh requested`);
+        }
+        
         const status = await checkAllServers();
         
         // Crear resumen optimizado para dashboard
@@ -539,16 +687,50 @@ app.get('/dashboard/summary', async (req, res) => {
                 healthScore: server.healthScore,
                 cpu: server.resources?.cpu || 0,
                 memory: server.resources?.memory || 0,
-                uptime: server.resources?.uptime || '0:00'
+                uptime: server.resources?.uptime || '0:00',
+                pm2_managed: server.pm2_managed,
+                pm2_status: server.pm2_status,
+                pm2_name: server.pm2_name
             })),
             alerts: generateAlerts(status.servers),
             systemMetrics: status.systemMetrics,
-            lastUpdate: status.lastUpdate
+            lastUpdate: status.lastUpdate,
+            cacheStatus: {
+                wasCached: !forceRefresh && cachedStatus !== null,
+                cacheAge: Date.now() - lastCheck
+            }
         };
         
         res.json({ ok: true, ...dashboardData });
     } catch (error) {
         console.error('Error getting dashboard summary:', error);
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+// Endpoint para forzar actualización del cache
+app.post('/cache/invalidate', async (req, res) => {
+    try {
+        console.log(`🔄 Cache invalidation requested by ${req.ip}`);
+        
+        // Invalidar ambos caches
+        cachedStatus = null;
+        lastCheck = 0;
+        systemMetricsCache = null;
+        systemMetricsLastCheck = 0;
+        
+        // Obtener estado fresco
+        const freshStatus = await checkAllServers();
+        
+        res.json({
+            ok: true,
+            message: 'Cache invalidated successfully',
+            serversChecked: Object.keys(freshStatus.servers).length,
+            lastUpdate: freshStatus.lastUpdate,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('Error invalidating cache:', error);
         res.status(500).json({ ok: false, error: error.message });
     }
 });
@@ -638,6 +820,93 @@ function generateAlerts(servers) {
 }
 
 // ================================
+// PM2 CONTROL FUNCTIONS
+// ================================
+
+// Execute PM2 command and return promise
+function execPM2Command(command) {
+    return new Promise((resolve, reject) => {
+        exec(command, { cwd: __dirname }, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`PM2 Command Error: ${error.message}`);
+                reject({ error: error.message, stderr });
+                return;
+            }
+            
+            console.log(`PM2 Command Output: ${stdout}`);
+            resolve({ stdout, stderr });
+        });
+    });
+}
+
+// Get PM2 app name by port
+function getPM2AppName(port) {
+    if (PM2_SERVER_CONFIG && PM2_SERVER_CONFIG.servers[port]) {
+        return PM2_SERVER_CONFIG.servers[port].pm2_name;
+    }
+    return null;
+}
+
+// Check if PM2 is available
+async function checkPM2Available() {
+    try {
+        await execPM2Command('pm2 --version');
+        return true;
+    } catch (error) {
+        console.error('PM2 not available:', error);
+        return false;
+    }
+}
+
+// Execute control action via PM2
+async function executeServerControl(port, action) {
+    const pm2AppName = getPM2AppName(port);
+    
+    if (!pm2AppName) {
+        throw new Error(`No PM2 configuration found for port ${port}`);
+    }
+    
+    const pm2Available = await checkPM2Available();
+    if (!pm2Available) {
+        throw new Error('PM2 is not available on this system');
+    }
+    
+    let command;
+    switch (action) {
+        case 'start':
+            // Start specific app from ecosystem config (use full path)
+            command = `pm2 start ~/scripts/ecosystem.config.js --only ${pm2AppName}`;
+            break;
+        case 'stop':
+            command = `pm2 stop ${pm2AppName}`;
+            break;
+        case 'restart':
+            command = `pm2 restart ${pm2AppName}`;
+            break;
+        default:
+            throw new Error(`Unsupported action: ${action}`);
+    }
+    
+    console.log(`🔧 Executing PM2 command: ${command}`);
+    const result = await execPM2Command(command);
+    
+    // Wait a moment for PM2 to process
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Get status after action
+    const statusResult = await execPM2Command(`pm2 jlist`);
+    const processes = JSON.parse(statusResult.stdout);
+    const appStatus = processes.find(p => p.name === pm2AppName);
+    
+    return {
+        command,
+        output: result.stdout,
+        pm2_status: appStatus ? appStatus.pm2_env.status : 'unknown',
+        pid: appStatus ? appStatus.pid : null
+    };
+}
+
+// ================================
 // CONTROL ENDPOINTS - PHASE 2
 // ================================
 
@@ -673,21 +942,52 @@ app.post('/servers/:port/control', async (req, res) => {
         
         console.log(`🎮 CONTROL ACTION: ${action} requested for port ${port} by ${req.ip}`);
         
-        // For Phase 2 initial implementation - simulate the action
-        // This is safer than executing actual system commands during testing
-        const result = {
-            ok: true,
-            action: action,
-            port: port,
-            simulated: true,
-            message: `Action '${action}' simulated for server on port ${port}`,
-            timestamp: new Date().toISOString()
-        };
-        
-        console.log(`✅ CONTROL RESULT: ${JSON.stringify(result)}`);
-        
-        // Return success response
-        res.json(result);
+        // Execute real PM2 control action
+        try {
+            const pm2Result = await executeServerControl(port, action);
+            
+            // Invalidar cache después de operaciones de control para forzar actualización
+            cachedStatus = null;
+            lastCheck = 0;
+            
+            const result = {
+                ok: true,
+                action: action,
+                port: port,
+                server_name: SERVER_CONFIG.servers[port]?.name || 'unknown',
+                pm2_app: getPM2AppName(port),
+                pm2_status: pm2Result.pm2_status,
+                pid: pm2Result.pid,
+                message: `Action '${action}' executed successfully for server on port ${port}`,
+                timestamp: new Date().toISOString(),
+                execution_details: {
+                    command: pm2Result.command,
+                    output: pm2Result.output
+                }
+            };
+            
+            console.log(`✅ CONTROL RESULT: ${JSON.stringify(result, null, 2)}`);
+            console.log(`🔄 Cache invalidated - next status check will be fresh`);
+            
+            // Return success response
+            res.json(result);
+            
+        } catch (pm2Error) {
+            console.error(`❌ PM2 Control Error:`, pm2Error);
+            
+            // Fallback to simulation mode if PM2 fails
+            const result = {
+                ok: false,
+                action: action,
+                port: port,
+                error: pm2Error.message,
+                fallback_simulation: true,
+                message: `PM2 control failed, falling back to simulation for port ${port}`,
+                timestamp: new Date().toISOString()
+            };
+            
+            res.status(500).json(result);
+        }
         
     } catch (error) {
         console.error('❌ Control endpoint error:', error);
@@ -702,10 +1002,22 @@ app.post('/servers/:port/control', async (req, res) => {
 // SERVER STARTUP
 // ================================
 
-app.listen(PORT, () => {
-    console.log(`🎮 Game Server Manager API - Phase 1 (Health Monitoring)`);
+app.listen(PORT, async () => {
+    console.log(`🎮 Game Server Manager API - Phase 2 (Health Monitoring + PM2 Control)`);
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📊 Monitoring ${Object.keys(SERVER_CONFIG.servers).length} Unreal servers`);
+    
+    // Check PM2 availability
+    const pm2Available = await checkPM2Available();
+    console.log(`🔧 PM2 Integration: ${pm2Available ? '✅ Available' : '❌ Not Available (legacy mode)'}`);
+    
+    if (PM2_SERVER_CONFIG) {
+        console.log(`⚙️  PM2 Configuration: ${Object.keys(PM2_SERVER_CONFIG.servers).length} servers configured`);
+        console.log(`📁 PM2 Ecosystem: ${PM2_SERVER_CONFIG.config.ecosystem_file}`);
+    } else {
+        console.log(`⚠️  PM2 Configuration: Not found (server-config.json)`);
+    }
+    
     console.log(``);
     console.log(`� Security Configuration:`);
     console.log(`   🔑 API Key required: ${SECURITY_CONFIG.apiKey === 'gsm_dev_key_2025_change_me' ? '⚠️  CHANGE DEFAULT KEY!' : '✅ Custom key set'}`);
@@ -720,6 +1032,7 @@ app.listen(PORT, () => {
     console.log(`   GET  /servers/:port/logs  🔒    - Server logs (read-only)`);
     console.log(`   GET  /system/metrics      🔒    - System-wide metrics (CPU, RAM, Disk)`);
     console.log(`   GET  /dashboard/summary   🔒    - Dashboard optimized data`);
+    console.log(`   POST /servers/:port/control🔒   - Server control (start/stop/restart)`);
     console.log(``);
     console.log(`🔑 Authentication Methods:`);
     console.log(`   Header: X-API-Key: ${SECURITY_CONFIG.apiKey}`);

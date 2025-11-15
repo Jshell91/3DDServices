@@ -316,14 +316,16 @@ class GameServerMonitor {
                             </div>
 
                             <div class="server-controls" style="margin-top:10px; display:flex; gap:8px;">
-                                <button class="btn btn-sm" onclick="gameMonitor.controlServer(${server.port}, 'start')">▶️ Start</button>
-                                <button class="btn btn-sm" onclick="gameMonitor.controlServer(${server.port}, 'stop')">⏹️ Stop</button>
-                                <button class="btn btn-sm" onclick="gameMonitor.controlServer(${server.port}, 'restart')">🔁 Restart</button>
+                                <button class="btn btn-sm btn-warning" onclick="gameMonitor.controlServer(${server.port}, 'stop')">⏹️ Stop</button>
+                                <button class="btn btn-sm btn-info" onclick="gameMonitor.controlServer(${server.port}, 'restart')">🔁 Restart</button>
                             </div>
                         </div>
                     ` : `
                         <div class="server-offline">
                             <span>Server not running</span>
+                            <div class="server-controls" style="margin-top:15px; display:flex; gap:8px; justify-content:center;">
+                                <button class="btn btn-sm btn-success" onclick="gameMonitor.controlServer(${server.port}, 'start')">▶️ Start</button>
+                            </div>
                         </div>
                     `}
                 </div>
@@ -828,10 +830,12 @@ const monitorCSS = `
         border-radius: 4px;
         cursor: pointer;
         font-size: 0.9em;
+        transition: all 0.2s ease;
     }
 
     .btn:hover {
         background: #0056b3;
+        transform: translateY(-1px);
     }
 
     .btn:disabled {
@@ -842,6 +846,31 @@ const monitorCSS = `
     .btn-sm {
         padding: 4px 8px;
         font-size: 0.8em;
+    }
+
+    .btn-success {
+        background: #28a745;
+    }
+
+    .btn-success:hover {
+        background: #218838;
+    }
+
+    .btn-warning {
+        background: #ffc107;
+        color: #212529;
+    }
+
+    .btn-warning:hover {
+        background: #e0a800;
+    }
+
+    .btn-info {
+        background: #17a2b8;
+    }
+
+    .btn-info:hover {
+        background: #138496;
     }
 `;
 

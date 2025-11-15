@@ -1,0 +1,66 @@
+{
+  "servers": {
+    "8080": {
+      "name": "unreal-01-mainworld", 
+      "map": "01_MAINWORLD",
+      "pm2_name": "unreal-01-mainworld",
+      "description": "Main World Server"
+    },
+    "8081": {
+      "name": "unreal-art-lobby",
+      "map": "ART_EXHIBITIONSARTLOBBY", 
+      "pm2_name": "unreal-art-lobby",
+      "description": "Art Exhibitions Lobby"
+    },
+    "8082": {
+      "name": "unreal-art-aiartists",
+      "map": "ART_EXHIBITIONS_AIArtists",
+      "pm2_name": "unreal-art-aiartists", 
+      "description": "AI Artists Exhibition"
+    },
+    "8083": {
+      "name": "unreal-art-strangeworlds",
+      "map": "ART_EXHIBITIONS_STRANGEWORLDS_",
+      "pm2_name": "unreal-art-strangeworlds",
+      "description": "Strange Worlds Exhibition" 
+    },
+    "8084": {
+      "name": "unreal-art-4deya",
+      "map": "ART_EXHIBITIONS_4Deya", 
+      "pm2_name": "unreal-art-4deya",
+      "description": "4Deya Exhibition"
+    },
+    "8086": {
+      "name": "unreal-art-halloween",
+      "map": "ART_Halloween2025_MULTIPLAYER",
+      "pm2_name": "unreal-art-halloween", 
+      "description": "Halloween 2025 Multiplayer"
+    },
+    "8087": {
+      "name": "unreal-art-julien",
+      "map": "ART_JULIENVALLETakaBYJULES",
+      "pm2_name": "unreal-art-julien",
+      "description": "Julien Vallet Exhibition"
+    },
+    "8090": {
+      "name": "unreal-skynova", 
+      "map": "SKYNOVAbyNOVA",
+      "pm2_name": "unreal-skynova",
+      "description": "Sky Nova by NOVA"
+    },
+    "8091": {
+      "name": "unreal-mall-downtown",
+      "map": "MALL_DOWNTOWNCITYMALL",
+      "pm2_name": "unreal-mall-downtown", 
+      "description": "Downtown City Mall"
+    }
+  },
+  "config": {
+    "process_manager": "pm2",
+    "ecosystem_file": "./ecosystem.config.js",
+    "base_path": "/home/jota/LinuxServer/LinuxServer",
+    "log_directory": "./logs",
+    "auto_restart": true,
+    "max_memory_restart": "2G"
+  }
+}
