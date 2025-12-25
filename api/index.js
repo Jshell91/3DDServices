@@ -122,11 +122,17 @@ app.get('/api/info', (req, res) => {
   });
 });
 
-// Limit to 100 requests per IP every 15 minutes
+// Limit to 300 requests per IP every 15 minutes (increased for admin operations)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // max 100 requests per IP
-  message: { ok: false, error: 'Too many requests, try again later.' }
+  max: 300, // max 300 requests per IP (increased from 100)
+  message: { ok: false, error: 'Too many requests, try again later.' },
+  skip: (req) => {
+    // Skip rate limiting for admin dashboard operations
+    return req.path.startsWith('/admin') || 
+           req.path.startsWith('/dashboard') ||
+           (req.session && req.session.isAuthenticated);
+  }
 });
 
 app.use(limiter);
@@ -207,6 +213,31 @@ app.get('/admin/api/players', requireAdmin, async (req, res) => {
   try {
     const data = await countPlayersByLevel();
     res.json({ ok: true, data });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+app.get('/admin/api/visits-by-date', requireAdmin, async (req, res) => {
+  try {
+    const date = req.query.date; // Format: YYYY-MM-DD
+    if (!date) {
+      return res.status(400).json({ ok: false, error: 'date parameter is required (YYYY-MM-DD)' });
+    }
+    
+    const result = await pool.query(
+      `SELECT 
+        pil.level_name,
+        COUNT(*) as visit_count,
+        DATE(pil.created_at) as visit_date
+      FROM player_in_level pil
+      WHERE DATE(pil.created_at) = $1
+      GROUP BY pil.level_name, DATE(pil.created_at)
+      ORDER BY visit_count DESC`,
+      [date]
+    );
+    
+    res.json({ ok: true, date, totalVisits: result.rows.reduce((sum, row) => sum + parseInt(row.visit_count), 0), data: result.rows });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
   }

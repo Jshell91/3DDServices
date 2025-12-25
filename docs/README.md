@@ -6,7 +6,7 @@ A comprehensive Node.js web service for managing game analytics, maps, online se
 - **REST API** with Express.js
 - **Admin Dashboard** with authentication and maps management
 - **🎮 Game Server Manager** - Real-time monitoring of Unreal dedicated servers *(New Nov 2025)*
-- **Display Order Management** with drag & drop reordering
+- **🔀 Drag & Drop Map Reordering** - Visual, interactive map ordering with real-time updates *(New Dec 2025)*
 - **Real-time Online Maps** management
 - **Player Analytics** and level tracking
 - **Artwork Likes** system

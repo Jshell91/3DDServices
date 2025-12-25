@@ -40,3 +40,7 @@ api/package-standalone.json
 *.temp
 OutBuild/
 test-build-output/
+
+# Reports and analytics
+reports/
+

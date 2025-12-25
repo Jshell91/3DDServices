@@ -516,6 +516,101 @@ tbody tr:nth-child(even):hover {
     background: white;
 }
 
+/* Drag handle styles */
+.drag-handle {
+    cursor: move;
+    font-size: 1.2em;
+    color: #999;
+    text-align: center;
+    user-select: none;
+    padding: 0 10px;
+}
+
+.drag-handle:hover {
+    color: #667eea;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+/* Toast notification */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    padding: 15px 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideIn 0.3s ease-out;
+    min-width: 250px;
+}
+
+.toast.success {
+    border-left: 4px solid #4caf50;
+}
+
+.toast.error {
+    border-left: 4px solid #f44336;
+}
+
+.toast.info {
+    border-left: 4px solid #2196f3;
+}
+
+.toast-icon {
+    font-size: 1.5em;
+}
+
+.toast-message {
+    flex: 1;
+    font-weight: 500;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+}
+
+/* Loading state */
+.table-loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.table-loading tbody {
+    opacity: 0.5;
+    cursor: wait;
+}
+
+/* Row highlight after reorder */
+.row-highlight {
+    background: #e8f5e9 !important;
+    transition: background 0.3s ease;
+}
+
 .btn-small {
     padding: 4px 12px;
     font-size: 12px;

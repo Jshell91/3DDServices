@@ -11,12 +11,33 @@
 ## 🔄 In Progress / Planned
 
 ### Game Server Manager Phase 2 (High Priority)
-- **Server Control Operations**: Remote start/stop/restart of Unreal servers
+- **Server Control Operations**: Remote start/stop/restart of Unreal servers ✅ **Implemented (Nov 2025)**
 - **Advanced Analytics**: Historical metrics, performance graphs, trend analysis
 - **Smart Alerts**: Email/Slack/webhook notifications for server issues
 - **Auto-recovery**: Automatic restart of failed servers
 - **Configuration Management**: Dynamic server configuration updates
 - **Performance Optimization**: Auto-scaling based on player count
+
+### Game Server Manager - Pending Features (Next Sprint)
+- **🪵 Server Logs Viewer**: 
+  - Add proxy endpoint `/api/dashboard/gsm/servers/:port/logs` in api/index.js
+  - Enable real-time log viewing from dashboard (currently shows placeholder)
+  - Support log filtering, search, and tail functionality
+  
+- **🔄 Manual Refresh Controls**:
+  - Add `refreshData()` function for manual dashboard refresh
+  - Implement `clearCache()` for forced cache invalidation
+  - Add refresh button with loading states
+  
+- **📊 Individual Server Health**:
+  - `getServerHealth(port)` for detailed server diagnostics
+  - Enhanced health metrics and recommendations
+  - Server-specific performance insights
+  
+- **🖥️ System Metrics Integration**:
+  - `getSystemMetrics()` for real-time Ubuntu server stats
+  - CPU/Memory/Disk usage trends and alerts
+  - Integration with dashboard system metrics panel
 
 ## 💡 Future Ideas
 

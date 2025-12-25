@@ -248,6 +248,12 @@ function renderMapsTable() {
         // Create individual cells to avoid innerHTML issues
         row.innerHTML = '';
         
+        // 0. Drag handle
+        const dragCell = document.createElement('td');
+        dragCell.className = 'drag-handle';
+        dragCell.textContent = '⋮⋮';
+        row.appendChild(dragCell);
+        
         // 1. Order input
         const orderCell = document.createElement('td');
         const orderInput = document.createElement('input');
@@ -320,9 +326,151 @@ function renderMapsTable() {
 }
 
 // Initialize drag & drop functionality
+let sortable = null;
+let isUpdating = false;
+
 function initializeDragDrop() {
-    // Drag & drop disabled since we removed the drag handle
-    // Users can use the Order input field to change order manually
+    const tbody = document.getElementById('maps-tbody');
+    if (!tbody) return;
+    
+    // Destroy previous instance if exists
+    if (sortable) {
+        sortable.destroy();
+    }
+    
+    sortable = Sortable.create(tbody, {
+        handle: '.drag-handle',
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        disabled: false,
+        onEnd: async function(evt) {
+            // Prevent multiple simultaneous updates (anti-spam)
+            if (isUpdating) {
+                showNotification('Please wait, saving...', 'info');
+                return;
+            }
+            
+            const movedMapId = evt.item.dataset.mapId;
+            const oldIndex = evt.oldIndex;
+            const newIndex = evt.newIndex;
+            
+            // If position didn't change, do nothing
+            if (oldIndex === newIndex) return;
+            
+            console.log(`🔄 Map ${movedMapId} moved from ${oldIndex + 1} to ${newIndex + 1}`);
+            
+            // Enable loading state
+            isUpdating = true;
+            sortable.option('disabled', true);
+            const table = document.getElementById('mapsTable');
+            table.classList.add('table-loading');
+            
+            try {
+                // Optimization: Only update affected rows
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                const updates = [];
+                const affectedRows = [];
+                
+                const start = Math.min(oldIndex, newIndex);
+                const end = Math.max(oldIndex, newIndex);
+                
+                // Update in memory first
+                for (let i = start; i <= end; i++) {
+                    const mapId = rows[i].dataset.mapId;
+                    const newOrder = i + 1;
+                    
+                    const mapIndex = window.mapsData.findIndex(m => m.id == mapId);
+                    if (mapIndex !== -1) {
+                        window.mapsData[mapIndex].display_order = newOrder;
+                    }
+                    
+                    affectedRows.push(rows[i]);
+                }
+                
+                console.log(`⚡ Optimized update: ${end - start + 1} maps instead of ${rows.length}`);
+                
+                // Send updates sequentially with small delay to avoid rate limiting
+                for (let i = start; i <= end; i++) {
+                    const mapId = rows[i].dataset.mapId;
+                    const newOrder = i + 1;
+                    
+                    await fetch(`${API_BASE}/admin/api/maps/${mapId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ display_order: newOrder })
+                    });
+                    
+                    // Small delay between requests (50ms)
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+                console.log('✅ Display order updated successfully');
+                
+                // Re-render to show updated order numbers
+                renderMapsTable();
+                initializeDragDrop(); // Re-initialize after render
+                
+                // Visual feedback: highlight affected rows
+                setTimeout(() => {
+                    const newRows = Array.from(tbody.querySelectorAll('tr'));
+                    for (let i = start; i <= end; i++) {
+                        newRows[i].classList.add('row-highlight');
+                    }
+                    
+                    // Remove highlight after 2 seconds
+                    setTimeout(() => {
+                        newRows.forEach(row => row.classList.remove('row-highlight'));
+                    }, 2000);
+                }, 100);
+                
+                showNotification(`Order updated (${end - start + 1} maps)`, 'success');
+                
+            } catch (error) {
+                console.error('❌ Error updating display order:', error);
+                showNotification('Error updating order', 'error');
+                
+                // Reload to restore correct state
+                await loadMaps();
+                
+            } finally {
+                // Disable loading state
+                isUpdating = false;
+                sortable.option('disabled', false);
+                table.classList.remove('table-loading');
+            }
+        }
+    });
+}
+
+// Show toast notification
+function showNotification(message, type = 'info') {
+    // Remove existing toast if any
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) {
+        existingToast.remove();
+    }
+    
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+    
+    toast.innerHTML = `
+        <span class="toast-icon">${icon}</span>
+        <span class="toast-message">${message}</span>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+    
+    // Also log to console
+    console.log(`${icon} ${message}`);
 }
 
 // Load online maps data

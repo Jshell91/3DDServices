@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.1.0] - 2025-12-25
+
+### ✨ NEW FEATURE: Drag & Drop Map Reordering
+- **Interactive Drag & Drop**: Intuitive map reordering in admin dashboard using SortableJS
+- **Visual Drag Handle**: Icon-based drag handle (⋮⋮) for clear interaction affordance
+- **Optimized Updates**: Only affected maps are updated (not all), reducing server load
+- **Toast Notifications**: User feedback with success/error messages that auto-dismiss
+- **Loading State**: Visual feedback (opacity reduction + disabled interaction) during save
+- **Row Highlighting**: Affected rows highlighted in green for 2 seconds post-reorder
+- **Anti-spam Protection**: Prevents multiple simultaneous updates while saving
+
+### 🔧 Improvements
+- **Rate Limiting Enhancement**: Increased from 100 to 300 requests per 15 minutes
+- **Admin Route Exemption**: `/admin` and `/dashboard` routes excluded from rate limiting
+- **Sequential API Calls**: 50ms delay between requests to prevent server overload
+- **New Endpoint**: `/admin/api/visits-by-date` for querying visit analytics by date
+
+### 📊 Performance
+- **Reduced API Calls**: Sequential updates instead of parallel (prevents rate limiting)
+- **Optimized Database Updates**: Only changed rows are updated during reorder operations
+- **Smooth Animations**: 150ms animation on drag with visual ghost element
+
+### 🛠️ Technical Details
+- **Frontend**: SortableJS 1.15.0 library integration
+- **Backend**: Admin authentication required for map updates
+- **Database**: Uses existing `display_order` column in `maps` table
+- **Session-based Auth**: Uses admin session cookies (no API key needed for drag & drop)
+
+### 📝 Documentation
+- Updated dashboard features list
+- Added drag & drop usage instructions to README
+- New analytics endpoint documentation
+
 ## [4.0.0] - 2025-11-09
 
 ### 🎮 NEW MAJOR FEATURE: Game Server Manager
