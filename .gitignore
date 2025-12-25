@@ -44,3 +44,7 @@ test-build-output/
 # Reports and analytics
 reports/
 
+# Security scripts (contienen contraseñas sugeridas)
+CHANGE_POSTGRES_PASSWORD.sql
+SECURITY_RECOVERY_PLAN.md
+
