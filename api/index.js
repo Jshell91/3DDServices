@@ -20,8 +20,12 @@ const {
 } = require('./postgreService');
 
 const odinService = require('./odinService');
+const alerts = require('./alerts');
 
 const app = express();
+
+// GSM connection state tracking
+let gsmLastKnownState = null; // null = unknown, true = online, false = offline
 const port = process.env.PORT || 3000;
 
 // Configure Express to handle connection issues
@@ -699,9 +703,29 @@ app.get('/api/dashboard/gsm-data', async (req, res) => {
     console.log('GSM response status:', response.status);
     const data = await response.json();
     console.log('GSM response data:', data);
+    
+    // GSM is online - check if we need to send recovery alert
+    if (gsmLastKnownState === false) {
+      console.log('🔄 GSM reconnected - sending recovery alert');
+      alerts.sendGSMReconnectedAlert().catch(err => 
+        console.error('Failed to send GSM reconnection alert:', err)
+      );
+    }
+    gsmLastKnownState = true;
+    
     res.json(data);
   } catch (error) {
     console.error('GSM Data error:', error.message);
+    
+    // GSM is offline - send alert if state changed
+    if (gsmLastKnownState !== false) {
+      console.log('🚨 GSM offline - sending alert');
+      alerts.sendGSMOfflineAlert(error.message).catch(err => 
+        console.error('Failed to send GSM offline alert:', err)
+      );
+    }
+    gsmLastKnownState = false;
+    
     res.status(500).json({ ok: false, error: 'Game Server Manager unavailable' });
   }
 });
@@ -720,10 +744,55 @@ app.get('/api/dashboard/gsm-health', async (req, res) => {
     console.log('GSM response status:', response.status);
     const data = await response.json();
     console.log('GSM response data:', data);
+    
+    // GSM is online - check if we need to send recovery alert
+    if (gsmLastKnownState === false) {
+      console.log('🔄 GSM reconnected - sending recovery alert');
+      alerts.sendGSMReconnectedAlert().catch(err => 
+        console.error('Failed to send GSM reconnection alert:', err)
+      );
+    }
+    gsmLastKnownState = true;
+    
     res.json(data);
   } catch (error) {
     console.error('GSM Health error:', error.message);
+    
+    // GSM is offline - send alert if state changed
+    if (gsmLastKnownState !== false) {
+      console.log('🚨 GSM offline - sending alert');
+      alerts.sendGSMOfflineAlert(error.message).catch(err => 
+        console.error('Failed to send GSM offline alert:', err)
+      );
+    }
+    gsmLastKnownState = false;
+    
     res.status(500).json({ ok: false, error: 'Game Server Manager unavailable' });
+  }
+});
+
+// Test endpoint for GSM connection alerts
+app.post('/api/alerts/test', async (req, res) => {
+  try {
+    const result = await alerts.sendTestAlert();
+    res.json({
+      ok: true,
+      message: 'Test alert sent successfully',
+      telegram: {
+        configured: !!process.env.TELEGRAM_BOT_TOKEN && !!process.env.TELEGRAM_CHAT_ID,
+        cooldown_minutes: process.env.ALERT_COOLDOWN_MINUTES || '15'
+      },
+      result
+    });
+  } catch (error) {
+    console.error('Test alert failed:', error);
+    res.status(500).json({
+      ok: false,
+      error: error.message,
+      telegram: {
+        configured: !!process.env.TELEGRAM_BOT_TOKEN && !!process.env.TELEGRAM_CHAT_ID
+      }
+    });
   }
 });
 
