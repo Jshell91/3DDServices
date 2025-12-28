@@ -1,0 +1,27 @@
+#!/bin/bash
+# Pre-push hook para verificar secretos antes de push
+
+set -e
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+echo -e "${YELLOW}🔐 Verificando secretos antes de push...${NC}"
+
+if ! command -v gitleaks &> /dev/null; then
+    echo -e "${RED}❌ gitleaks no está instalado${NC}"
+    exit 1
+fi
+
+# Verificar todos los commits que serán pusheados
+if gitleaks detect --source git --verbose --config .gitleaks.toml; then
+    echo -e "${GREEN}✅ No se encontraron secretos. Push permitido.${NC}"
+    exit 0
+else
+    echo -e "${RED}❌ ALERTA: Se detectaron secretos en el historial${NC}"
+    echo "No se completará el push por razones de seguridad."
+    echo "Por favor, usa git filter-branch para eliminar los secretos."
+    exit 1
+fi

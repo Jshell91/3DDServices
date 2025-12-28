@@ -1,0 +1,41 @@
+#!/bin/bash
+# Pre-commit hook para detectar secretos con gitleaks
+# Este script se ejecuta automáticamente antes de cada commit
+
+set -e
+
+# Colores para output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo -e "${YELLOW}🔐 Ejecutando gitleaks para detectar secretos...${NC}"
+
+# Buscar gitleaks en diferentes ubicaciones
+GITLEAKS_CMD="gitleaks"
+
+# Si gitleaks no está en PATH, intentar otras ubicaciones
+if ! command -v gitleaks &> /dev/null; then
+    echo -e "${RED}❌ gitleaks no está instalado${NC}"
+    echo "Instálalo con: brew install gitleaks (macOS) o choco install gitleaks (Windows)"
+    exit 1
+fi
+
+# Ejecutar gitleaks en los archivos staged
+if gitleaks protect --verbose --staged --config .gitleaks.toml; then
+    echo -e "${GREEN}✅ No se encontraron secretos. Commit permitido.${NC}"
+    exit 0
+else
+    echo -e "${RED}❌ ALERTA: Se detectaron posibles secretos en tu commit${NC}"
+    echo ""
+    echo "Por favor:"
+    echo "1. Revisa los secretos detectados arriba"
+    echo "2. Usa variables de entorno (.env) para credenciales"
+    echo "3. Asegúrate de que .env esté en .gitignore"
+    echo "4. Si es un falso positivo, actualiza .gitleaksignore"
+    echo ""
+    echo "Para forzar el commit (no recomendado):"
+    echo "  git commit --no-verify"
+    exit 1
+fi

@@ -1,0 +1,91 @@
+# Gitleaks Configuration
+# Detecta y previene secrets en commits
+
+[source]
+# Incluir todos los archivos
+include-paths = []
+# Excluir archivos especificados
+exclude-paths = [".gitleaksignore"]
+exclude-commit-patterns = []
+
+[audit]
+# No crear logs de auditoría
+log-opts = ""
+
+# Activar todas las reglas built-in
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key"
+regex = '''(?i)aws[_-]?access[_-]?key[_-]?id\s*=\s*[A-Z0-9]{20}'''
+tags = ["key", "AWS"]
+entropy = 3.5
+keywords = ["aws", "access", "key"]
+
+[[rules]]
+id = "aws-secret-key"
+description = "AWS Secret Key"
+regex = '''(?i)aws[_-]?secret[_-]?access[_-]?key\s*=\s*[A-Za-z0-9\/+=]{40}'''
+tags = ["key", "AWS"]
+entropy = 3.5
+keywords = ["aws", "secret", "key"]
+
+[[rules]]
+id = "github-token"
+description = "GitHub Personal Access Token"
+regex = '''(ghp_|gho_|ghu_|ghs_|ghr_)[A-Za-z0-9_]{36,255}'''
+tags = ["token", "GitHub"]
+entropy = 4.0
+keywords = ["github", "token"]
+
+[[rules]]
+id = "postgresql-password"
+description = "PostgreSQL Password Pattern"
+regex = '''password\s*[:=]\s*['\"]([^'\"]+)['\"]'''
+tags = ["password", "PostgreSQL"]
+entropy = 3.0
+keywords = ["password", "pg", "postgresql"]
+
+[[rules]]
+id = "database-url"
+description = "Database Connection String"
+regex = '''(postgres|mysql|mongodb)://[a-zA-Z0-9_]+:[a-zA-Z0-9_@.]+@[a-zA-Z0-9.-]+'''
+tags = ["connection", "database"]
+entropy = 3.5
+keywords = ["postgres", "mysql", "mongodb", "connection"]
+
+[[rules]]
+id = "private-key"
+description = "Private Key Pattern"
+regex = '''-----BEGIN (RSA|OPENSSH|PGP|EC) PRIVATE KEY-----'''
+tags = ["key", "private"]
+entropy = 4.0
+keywords = ["private", "key", "begin"]
+
+[[rules]]
+id = "api-key-pattern"
+description = "API Key Pattern"
+regex = '''[a-zA-Z_][a-zA-Z0-9_]*[_-]?key\s*[:=]\s*['\"]?[A-Za-z0-9\-_\.]{20,}['\"]?'''
+tags = ["key", "api"]
+entropy = 3.5
+keywords = ["api", "key"]
+
+[[rules]]
+id = "jwt-token"
+description = "JWT Token"
+regex = '''eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+'''
+tags = ["token", "jwt"]
+entropy = 4.0
+keywords = ["jwt", "bearer", "token"]
+
+[allowlist]
+# Permitir falsos positivos conocidos
+paths = [
+  '''\.env\.example$''',
+  '''.*\.env\.example$'''
+]
+commits = []
+regexes = [
+  "your_.*",
+  "change_this.*",
+  "example_.*"
+]

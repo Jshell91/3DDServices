@@ -11,6 +11,9 @@ const path = require('path');
 // Cargar variables de entorno
 require('dotenv').config();
 
+// Cargar sistema de alertas Telegram
+const alerts = require('./alerts');
+
 // Cargar configuración de servidores PM2
 const serverConfigPath = path.join(__dirname, 'server-config.json');
 let PM2_SERVER_CONFIG = null;
@@ -69,6 +72,9 @@ const SERVER_CONFIG = {
 let systemMetricsCache = null;
 let systemMetricsLastCheck = 0;
 const SYSTEM_METRICS_CACHE_DURATION = 300000; // 300 segundos (5 minutos)
+
+// Cache para estado anterior de servidores (para detectar cambios)
+const previousServerStates = new Map();
 
 app.use(cors());
 app.use(express.json());
@@ -400,6 +406,57 @@ async function getSystemMetrics() {
     }
 }
 
+/**
+ * Check server state changes and send alerts if needed
+ * @param {number} port - Server port
+ * @param {Object} currentState - Current server state
+ */
+function checkAndSendAlerts(port, currentState) {
+    const serverKey = `${currentState.name}:${port}`;
+    const previousState = previousServerStates.get(serverKey);
+    
+    // Primera vez que vemos este servidor
+    if (!previousState) {
+        previousServerStates.set(serverKey, currentState);
+        return;
+    }
+    
+    // Detectar servidor caído (running → stopped)
+    if (previousState.status === 'running' && currentState.status === 'stopped') {
+        console.log(`🚨 Server down detected: ${serverKey}`);
+        alerts.sendServerDownAlert({
+            name: currentState.name,
+            port: port,
+            status: currentState.status,
+            error: currentState.error
+        }).catch(err => console.error('Alert error:', err));
+    }
+    
+    // Detectar servidor recuperado (stopped → running)
+    if (previousState.status === 'stopped' && currentState.status === 'running') {
+        console.log(`✅ Server recovered: ${serverKey}`);
+        alerts.sendServerRecoveredAlert({
+            name: currentState.name,
+            port: port
+        }).catch(err => console.error('Alert error:', err));
+    }
+    
+    // Detectar degradación de salud (healthy → warning/critical)
+    if (previousState.healthLevel === 'healthy' && 
+        (currentState.healthLevel === 'warning' || currentState.healthLevel === 'critical')) {
+        console.log(`⚠️ Server health degraded: ${serverKey}`);
+        alerts.sendServerUnhealthyAlert({
+            name: currentState.name,
+            port: port,
+            players: currentState.resources?.players || 0,
+            maxPlayers: currentState.resources?.maxPlayers || 0
+        }).catch(err => console.error('Alert error:', err));
+    }
+    
+    // Actualizar estado previo
+    previousServerStates.set(serverKey, currentState);
+}
+
 function calculateHealthScore(isRunning, resources, hasRecentLogs) {
     if (!isRunning) return 0;
     
@@ -495,6 +552,9 @@ async function checkAllServers() {
                 pm2_name: serverStatus.pm2_name,
                 lastChecked: new Date().toISOString()
             };
+            
+            // Detectar cambios de estado y enviar alertas
+            checkAndSendAlerts(portNum, servers[port]);
             
         } catch (error) {
             console.error(`Error checking server ${port}:`, error.message);
@@ -999,6 +1059,43 @@ app.post('/servers/:port/control', async (req, res) => {
 });
 
 // ================================
+// TEST ALERTS ENDPOINT
+// ================================
+
+app.post('/alerts/test', async (req, res) => {
+    console.log('🧪 Testing alert system...');
+    
+    try {
+        const success = await alerts.sendTestAlert();
+        
+        if (success) {
+            res.json({
+                ok: true,
+                message: 'Test alert sent successfully',
+                telegram: {
+                    configured: !!process.env.TELEGRAM_BOT_TOKEN && !!process.env.TELEGRAM_CHAT_ID,
+                    cooldown_minutes: process.env.ALERT_COOLDOWN_MINUTES || 15
+                }
+            });
+        } else {
+            res.status(500).json({
+                ok: false,
+                error: 'Failed to send test alert',
+                telegram: {
+                    configured: !!process.env.TELEGRAM_BOT_TOKEN && !!process.env.TELEGRAM_CHAT_ID
+                }
+            });
+        }
+    } catch (error) {
+        console.error('❌ Test alert error:', error);
+        res.status(500).json({
+            ok: false,
+            error: error.message
+        });
+    }
+});
+
+// ================================
 // SERVER STARTUP
 // ================================
 
@@ -1035,9 +1132,10 @@ app.listen(PORT, async () => {
     console.log(`   POST /servers/:port/control🔒   - Server control (start/stop/restart)`);
     console.log(``);
     console.log(`🔑 Authentication Methods:`);
-    console.log(`   Header: X-API-Key: ${SECURITY_CONFIG.apiKey}`);
-    console.log(`   Query:  ?apikey=${SECURITY_CONFIG.apiKey}`);
-    console.log(`   Bearer: Authorization: Bearer ${SECURITY_CONFIG.apiKey}`);
+    console.log(`   Header: X-API-Key: <your-api-key>`);
+    console.log(`   Query:  ?apikey=<your-api-key>`);
+    console.log(`   Bearer: Authorization: Bearer <your-api-key>`);
+    console.log(`   ✅ API Key configured: ${SECURITY_CONFIG.apiKey.substring(0, 10)}...`);
     console.log(``);
     console.log(`⏱️  Cache duration: ${CACHE_DURATION/1000}s`);
     console.log(`📋 Log directory: ${SERVER_CONFIG.logDir}`);

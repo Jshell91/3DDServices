@@ -1,0 +1,21 @@
+# Gitleaks ignore file
+# Archivos y patrones a ignorar en el scanning de secretos
+
+# Documentos de seguridad (contienen ejemplos de contraseñas)
+SECURITY_RECOVERY_PLAN.md
+CHANGE_POSTGRES_PASSWORD.sql
+
+# Archivos de ejemplo (no contienen credenciales reales)
+api/.env.example
+.env.example
+
+# Directorios
+node_modules/
+.git/
+dist/
+build/
+coverage/
+
+# Logs
+*.log
+logs/
