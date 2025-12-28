@@ -1,6 +1,10 @@
 # Gitleaks ignore file
 # Archivos y patrones a ignorar en el scanning de secretos
 
+# Archivos de configuración de gitleaks (contienen ejemplos de regex)
+.gitleaks.toml
+.gitleaksignore
+
 # Documentos de seguridad (contienen ejemplos de contraseñas)
 SECURITY_RECOVERY_PLAN.md
 CHANGE_POSTGRES_PASSWORD.sql

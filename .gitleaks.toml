@@ -81,7 +81,9 @@ keywords = ["jwt", "bearer", "token"]
 # Permitir falsos positivos conocidos
 paths = [
   '''\.env\.example$''',
-  '''.*\.env\.example$'''
+  '''.*\.env\.example$''',
+  '''\.gitleaks\.toml$''',
+  '''\.gitleaksignore$'''
 ]
 commits = []
 regexes = [
